@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cleanup-unused-images",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/payment/cleanup-expired-carts",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}

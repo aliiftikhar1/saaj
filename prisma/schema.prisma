@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === PRODUCT ===
+model Product {
+  id          String              @id @default(cuid())
+  name        String
+  description String
+  price       Decimal             @db.Decimal(10, 2)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  images      String[]
+  slug        String              @unique
+  category    ProductCategoryEnum
+  cartItems   CartItem[]
+  sizeType    SizeTypeEnum?
+  sizes       Size[]
+}
+
+model Size {
+  id            String     @id @default(cuid())
+  label         String
+  productId     String
+  stockTotal    Int        @default(10)
+  stockReserved Int        @default(0)
+  cartItems     CartItem[]
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum SizeTypeEnum {
+  Standard
+  ShoeSize
+  OneSize
+}
+
+enum ProductCategoryEnum {
+  DRESSES
+  OUTERWEAR
+  TOPS_BOTTOMS
+  BAGS_ACCESSORIES
+  SHOES
+}
+
+// === CART ===
+model Cart {
+  id          String     @id @default(cuid())
+  userId      String?
+  status      CartStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  reservedAt  DateTime?
+  checkoutAt  DateTime?
+  abandonedAt DateTime?
+
+  items CartItem[]
+  order Order?
+
+  @@index([status])
+  @@index([updatedAt])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  sizeId    String
+  quantity  Int
+  unitPrice Decimal  @db.Decimal(10, 2)
+  title     String
+  image     String
+  createdAt DateTime @default(now())
+  uodatedAt DateTime @updatedAt
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size    Size    @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, sizeId])
+  @@index([cartId])
+}
+
+enum CartStatus {
+  ACTIVE
+  CHECKOUT
+  ABANDONED
+  ORDERED
+}
+
+// === ORDER ===
+model Order {
+  id          String @id @default(cuid())
+  orderNumber Int    @default(autoincrement())
+
+  // === Cart ===
+  cartId String @unique
+  cart   Cart   @relation(fields: [cartId], references: [id])
+
+  // === Date Details ===
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // === Delivery Details ===
+  delieveryName         String?
+  deliveryEmail         String?
+  deliveryPhone         String?
+  deliveryStreetAddress String?
+  deliveryCity          String?
+  deliveryPostcode      String?
+  deliveryState         String?
+  deliveryCountry       String?
+
+  // === Billing Details ===
+  billingName          String?
+  billingStreetAddress String?
+  billingCity          String?
+  billingPostcode      String?
+  billingState         String?
+  billingCountry       String?
+
+  // === Stripe Details ===
+  stripeSessionId String? @unique
+
+  // === Payment & Status Details ===
+  totalPrice    Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod @default(STRIPE)
+  paymentStatus PaymentStatus @default(PENDING)
+  status        OrderStatus   @default(PENDING)
+
+  @@index([deliveryEmail])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+}
+
+// === BLOG ===
+model BlogPost {
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  category     BlogCategory
+  slug         String       @unique
+  content      String
+  publishedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  authorId     String
+  duration     Int
+  blogImageUrl String
+  author       Author       @relation(fields: [authorId], references: [id])
+}
+
+model Author {
+  id         String     @id @default(cuid())
+  name       String
+  occupation String
+  avatarUrl  String
+  posts      BlogPost[]
+}
+
+enum BlogCategory {
+  TRENDS
+  SUSTAINABILITY
+  STYLE_GUIDES
+  DESIGNERS
+  FASHION_NEWS
+}

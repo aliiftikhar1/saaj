@@ -1,0 +1,8 @@
+export const CART_FREE_SHIPPING = "Free";
+export const MAX_CART_TOTAL_QUANTITY = 20;
+export const MAX_CART_ITEM_QUANTITY = 5;
+
+export const CART_STATUS_ACTIVE = "ACTIVE";
+export const CART_STATUS_ABANDONED = "ABANDONED";
+export const CART_STATUS_CHECKOUT = "CHECKOUT";
+export const CART_STATUS_ORDERED = "ORDERED";

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "CartItem" ADD COLUMN     "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "uodatedAt" TIMESTAMP(3);

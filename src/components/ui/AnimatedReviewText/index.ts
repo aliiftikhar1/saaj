@@ -1,0 +1,1 @@
+export { AnimatedReviewText } from "./AnimatedReviewText";

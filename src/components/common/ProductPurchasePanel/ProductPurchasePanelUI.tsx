@@ -1,0 +1,131 @@
+"use client";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  AnimatedHeadingText,
+  Button,
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui";
+import { PRODUCT_ACCORDION_ITEMS } from "@/lib";
+import { useState } from "react";
+import { ProductWithSizes } from "@/types/client";
+
+type ProductPurchasePanelUIProps = {
+  isLoading: boolean;
+  isError: boolean;
+  product: ProductWithSizes;
+  defaultSize?: string;
+  onAddToCart: (sizeId: string, sizeLabel: string) => Promise<void>;
+};
+
+export function ProductPurchasePanelUI(props: ProductPurchasePanelUIProps) {
+  // === PROPS ===
+  const {
+    isLoading = false,
+    isError = false,
+    product,
+    defaultSize = "",
+    onAddToCart,
+  } = props;
+
+  // === STATE ===
+  const [selectedSize, setSelectedSize] = useState<string>(defaultSize);
+  const [showSizeError, setShowSizeError] = useState<boolean>(false);
+
+  // === FUNCTIONS ===
+  const validateSizeSelection = () => {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      setShowSizeError(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handleAddToCart = async () => {
+    if (!validateSizeSelection()) {
+      return;
+    }
+
+    await onAddToCart(
+      selectedSize,
+      product.sizes.find((size) => size.id === selectedSize)?.label || "",
+    );
+  };
+
+  return (
+    <div className="w-full lg:w-[40%] flex flex-col gap-8 lg:gap-10 lg:sticky lg:top-22 self-start">
+      <div className="flex flex-col gap-2">
+        <AnimatedHeadingText text={product.name} variant="product-page-title" />
+        <h4 className="text-xl md:text-2xl font-medium pb-2">
+          ${product.price}
+        </h4>
+        <p className="text-neutral-10 text-sm">{product.description}</p>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        {product.sizes && product.sizes.length > 1 && (
+          <div className="flex flex-col gap-3">
+            <label
+              htmlFor="size-select"
+              className="text-sm font-semibold text-neutral-10"
+            >
+              Select Size
+            </label>
+
+            {showSizeError && (
+              <p className="text-red-500 text-sm">Please select a size</p>
+            )}
+
+            <ToggleGroup
+              id="size-select"
+              type="single"
+              onValueChange={(value) => {
+                setSelectedSize(value);
+                setShowSizeError(false);
+              }}
+              value={selectedSize}
+            >
+              {product.sizes.map((size) => (
+                <ToggleGroupItem key={size.id} value={size.id}>
+                  {size.label?.toUpperCase()}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+        )}
+
+        {isError && (
+          <p className="text-red-500 text-sm">
+            An error occurred while adding the product to the cart. Please try
+            again.
+          </p>
+        )}
+
+        <Button
+          text={"Add to Cart"}
+          variant={"dark"}
+          onClick={handleAddToCart}
+          isLoading={isLoading}
+          className={"w-full"}
+        />
+      </div>
+
+      <Accordion collapsible type="single">
+        {PRODUCT_ACCORDION_ITEMS.map((item) => (
+          <AccordionItem key={item.value} value={item.value}>
+            <AccordionTrigger className="text-base" smallVariant>
+              {item.trigger}
+            </AccordionTrigger>
+            <AccordionContent className="text-sm" smallVariant>
+              {item.content}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
+  );
+}
