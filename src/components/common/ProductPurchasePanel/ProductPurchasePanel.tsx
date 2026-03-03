@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useCartCount, useCartDialog } from "@/providers";
 import { ProductWithSizes } from "@/types/client";
 import { ProductPurchasePanelUI } from "./ProductPurchasePanelUI";
-import { screamingSnakeToTitle } from "@/lib";
 import { addToCart } from "@/lib/server/actions";
 
 type ProductPurchasePanelProps = {
@@ -46,7 +45,7 @@ export function ProductPurchasePanel(props: ProductPurchasePanelProps) {
         price: product.price.toString(),
         imageUrl: product.images[0],
         size: sizeLabel,
-        category: screamingSnakeToTitle(product.category),
+        category: product.category?.name ?? "Uncategorized",
         quantity: result.data.quantity,
       });
       setIsError(false);

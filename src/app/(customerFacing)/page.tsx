@@ -18,34 +18,61 @@ import {
   getButtonStyles,
 } from "@/components";
 import { HomeVideoSectionWrapper } from "@/components/common/HomeVideoSection/HomeVideoSectionClient";
-import { mockReviews } from "@/components/common/ReviewCardsSection/data";
-import { routes, screamingSnakeToTitle, STORE_COLLECTIONS } from "@/lib";
-import { getHomePageBlogs, getThreeLatestProducts } from "@/lib/server/queries";
+import { routes, screamingSnakeToTitle } from "@/lib";
+import {
+  getHomePageBlogs,
+  getFeaturedProducts,
+  getCollections,
+  getSiteContentMap,
+  getActiveTestimonials,
+} from "@/lib/server/queries";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Cartelle",
+    absolute: "Saaj Tradition",
   },
 };
 
 export default async function HomePage() {
   // === QUERIES ===
-  const products = await getThreeLatestProducts();
+  const products = await getFeaturedProducts();
   const productsList = products.success ? products.data : [];
 
   const blogPostsResponse = await getHomePageBlogs();
   const blogPosts = blogPostsResponse.success ? blogPostsResponse.data : [];
 
+  const collectionsResponse = await getCollections();
+  const collections = collectionsResponse.success
+    ? collectionsResponse.data
+    : [];
+
+  const contentMapResponse = await getSiteContentMap();
+  const c = contentMapResponse.success ? contentMapResponse.data : {};
+
+  const testimonialsResponse = await getActiveTestimonials();
+  const testimonials = (
+    testimonialsResponse.success ? testimonialsResponse.data : []
+  ).map((t) => ({
+    rating: t.rating,
+    reviewText: t.text,
+    reviewerName: t.name,
+    reviewerTitle: "",
+    reviewerImageUrl: t.imageSrc || "",
+  }));
+
   return (
     <main>
-      <HeroSection />
+      <HeroSection
+        heading={c.hero_heading}
+        subheading={c.hero_subheading}
+      />
 
       <BaseSection className="py-16 xl:py-20" id="hero-image">
         <div className="flex flex-col gap-8">
           <div className="flex items-end">
             <SectionHeading
-              heading="New Arrivals"
-              subheading="Fresh Selections"
+              heading={c.new_arrivals_heading || "New Arrivals"}
+              subheading={c.new_arrivals_subheading || "Fresh Selections"}
             />
             <Link
               className={getButtonStyles(
@@ -58,7 +85,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <AnimateFadeIn className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <AnimateFadeIn className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {productsList.map((product) => (
               <ProductTile
                 key={product.id}
@@ -66,6 +93,7 @@ export default async function HomePage() {
                 slug={product.slug}
                 name={product.name}
                 price={Number(product.price)}
+                compareAtPrice={product.compareAtPrice ? Number(product.compareAtPrice) : null}
                 primaryImageUrl={product.images[0]}
                 hoverImageUrl={product.images[1]}
               />
@@ -93,18 +121,18 @@ export default async function HomePage() {
           >
             <FeatureCard
               number="01"
-              title="Deliver with Quality"
-              description="Each product is crafted with attention to detail and quality materials, ensuring durability and comfort."
+              title={c.feature_card_1_title || "Deliver with Quality"}
+              description={c.feature_card_1_description || "Each product is crafted with attention to detail and quality materials, ensuring durability and comfort."}
             />
             <FeatureCard
               number="02"
-              title="Designed to Impress"
-              description="Our products feature sleek designs and modern aesthetics, making them a stylish addition to any wardrobe."
+              title={c.feature_card_2_title || "Designed to Impress"}
+              description={c.feature_card_2_description || "Our products feature sleek designs and modern aesthetics, making them a stylish addition to any wardrobe."}
             />
             <FeatureCard
               number="03"
-              title="Curated for You"
-              description="We carefully select each item to meet high standards of style, comfort, and functionality."
+              title={c.feature_card_3_title || "Curated for You"}
+              description={c.feature_card_3_description || "We carefully select each item to meet high standards of style, comfort, and functionality."}
             />
           </AnimateStagger>
         </BaseSection>
@@ -113,10 +141,10 @@ export default async function HomePage() {
       <BaseSection className="py-16 xl:py-20" id="collections-section">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <SectionHeading
-            heading="Collections"
-            subheading="Curated for quality"
+            heading={c.collections_heading || "Collections"}
+            subheading={c.collections_subheading || "Curated for quality"}
           />
-          {STORE_COLLECTIONS.map((collection) => (
+          {collections.map((collection) => (
             <CollectionTile
               key={collection.name}
               title={collection.name}
@@ -129,11 +157,11 @@ export default async function HomePage() {
       </BaseSection>
 
       <div className="relative bg-main-01">
-        <ReviewCardsSection reviews={mockReviews} />
+        <ReviewCardsSection reviews={testimonials} />
       </div>
 
       <HomeVideoSectionWrapper>
-        <HomeVideoSection />
+        <HomeVideoSection text={c.video_section_text} />
       </HomeVideoSectionWrapper>
 
       <BaseSection
@@ -141,7 +169,7 @@ export default async function HomePage() {
         id="home-news-section"
       >
         <div className="flex justify-between items-end">
-          <SectionHeading heading="Our News" subheading="Explore The Trends" />
+          <SectionHeading heading={c.news_heading || "Our News"} subheading={c.news_subheading || "Explore The Trends"} />
           <Link
             className={getButtonStyles(
               "light",

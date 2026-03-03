@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 
-import { OrderStatus, Product, ProductCategoryEnum } from "@prisma/client";
+import { OrderStatus, Product } from "@prisma/client";
 import { ServerActionResponse } from "@/types/server";
 import {
   ProductDashboardStats,
@@ -11,6 +11,16 @@ import { wrapServerCall } from "../helpers";
 import { prisma } from "@/lib/prisma";
 import { CACHE_TAG_PRODUCT } from "@/lib/constants/cache-tags";
 import { SIZE_TEMPLATES, SIZE_TYPES } from "@/lib/constants";
+import { SerializedProduct } from "@/types/client";
+
+/** Convert Prisma Product Decimals to plain numbers for client serialization */
+function serializeProduct<T extends { price: unknown; compareAtPrice?: unknown }>(product: T) {
+  return {
+    ...product,
+    price: Number(product.price),
+    compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+  };
+}
 
 // === STATIC PAGE QUERIES ===
 const getThreeLatestProductsCached = unstable_cache(
@@ -21,19 +31,40 @@ const getThreeLatestProductsCached = unstable_cache(
       take: 3,
     });
 
-    return products;
+    return products.map(serializeProduct);
   },
   [CACHE_TAG_PRODUCT, "latest-three"],
   { tags: [CACHE_TAG_PRODUCT] },
 );
 
 export async function getThreeLatestProducts(): Promise<
-  ServerActionResponse<Product[]>
+  ServerActionResponse<SerializedProduct[]>
 > {
   return wrapServerCall(async () => {
-    const products = await getThreeLatestProductsCached();
+    return await getThreeLatestProductsCached();
+  });
+}
 
-    return products;
+// Featured products for home page new arrivals
+const getFeaturedProductsCached = unstable_cache(
+  async () => {
+    const products = await prisma.product.findMany({
+      where: { isActive: true, isFeatured: true },
+      orderBy: { createdAt: "desc" },
+      take: 9,
+    });
+
+    return products.map(serializeProduct);
+  },
+  [CACHE_TAG_PRODUCT, "featured"],
+  { tags: [CACHE_TAG_PRODUCT] },
+);
+
+export async function getFeaturedProducts(): Promise<
+  ServerActionResponse<SerializedProduct[]>
+> {
+  return wrapServerCall(async () => {
+    return await getFeaturedProductsCached();
   });
 }
 
@@ -45,7 +76,7 @@ const getThreeRandomProductsCache = unstable_cache(
       take: 3,
     });
 
-    return products;
+    return products.map(serializeProduct);
   },
   [CACHE_TAG_PRODUCT, "random-three"],
   { tags: [CACHE_TAG_PRODUCT] },
@@ -53,17 +84,18 @@ const getThreeRandomProductsCache = unstable_cache(
 
 export async function getThreeRandomProducts(
   id: string,
-): Promise<ServerActionResponse<Product[]>> {
+): Promise<ServerActionResponse<SerializedProduct[]>> {
   return wrapServerCall(async () => {
-    const products = await getThreeRandomProductsCache(id);
-
-    return products;
+    return await getThreeRandomProductsCache(id);
   });
 }
 const getAllProductsWithTotalSoldCached = unstable_cache(
   async (): Promise<ProductGetAllCounts[]> => {
     const products = await prisma.product.findMany({
       include: {
+        category: {
+          select: { name: true },
+        },
         cartItems: {
           include: {
             cart: {
@@ -94,9 +126,12 @@ const getAllProductsWithTotalSoldCached = unstable_cache(
         return sum;
       }, 0);
 
+      // Destructure to exclude cartItems (contains Decimal fields) from client payload
+      const { cartItems, category, ...productWithoutCartItems } = product;
+
       return {
-        ...product,
-        price: Number(product.price),
+        ...serializeProduct(productWithoutCartItems),
+        categoryName: category?.name ?? "Uncategorized",
         totalSold,
       };
     });
@@ -115,30 +150,59 @@ export async function getAllProductsWithTotalSold(): Promise<
   });
 }
 
-export async function getProductsByCategory(
-  category?: string,
-): Promise<ServerActionResponse<Product[]>> {
+export async function getProductsByCategorySlug(
+  categorySlug?: string,
+): Promise<ServerActionResponse<SerializedProduct[]>> {
   return wrapServerCall(async () => {
     const products = await prisma.product.findMany({
-      where: category
-        ? { category: category as ProductCategoryEnum, isActive: true }
+      where: categorySlug
+        ? { category: { slug: categorySlug }, isActive: true }
         : { isActive: true },
+      include: { category: { select: { name: true, slug: true } } },
     });
 
-    return products;
+    return products.map(serializeProduct);
+  });
+}
+
+export async function getProductsByCollectionSlug(
+  slug: string,
+): Promise<ServerActionResponse<SerializedProduct[]>> {
+  return wrapServerCall(async () => {
+    const products = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        collections: {
+          some: {
+            slug,
+          },
+        },
+      },
+    });
+    return products.map(serializeProduct);
   });
 }
 
 // === DYNAMIC PAGE QUERIES ===
 export async function getProductById(
   id: string,
-): Promise<ServerActionResponse<Product | null>> {
+): Promise<
+  ServerActionResponse<
+    (SerializedProduct & { collections: { id: string; name: string }[] }) | null
+  >
+> {
   return wrapServerCall(async () => {
     const product = await prisma.product.findFirst({
       where: { id },
+      include: {
+        collections: {
+          select: { id: true, name: true },
+        },
+      },
     });
 
-    return product;
+    if (!product) return null;
+    return serializeProduct(product);
   });
 }
 
@@ -150,6 +214,7 @@ export async function getProductBySlug(
       where: { slug },
       include: {
         sizes: true,
+        category: { select: { name: true, slug: true } },
       },
     });
 
@@ -172,8 +237,13 @@ export async function getProductBySlug(
     });
 
     return {
-      ...product,
-      price: Number(product.price),
+      ...serializeProduct(product),
+      category: product.category ?? null,
+      sizes: product.sizes.map((s) => ({
+        ...s,
+        stockTotal: s.stockTotal,
+        stockReserved: s.stockReserved,
+      })),
     };
   });
 }
@@ -199,5 +269,42 @@ export async function getDashboardProductStats(): Promise<
       activeProducts,
       lowStockProducts: lowStockCount,
     };
+  });
+}
+
+export async function getAdminProductById(
+  id: string,
+): Promise<
+  ServerActionResponse<
+    | (SerializedProduct & {
+        sizes: Array<{
+          id: string;
+          label: string;
+          stockTotal: number;
+          stockReserved: number;
+        }>;
+        collections: { id: string; name: string }[];
+      })
+    | null
+  >
+> {
+  return wrapServerCall(async () => {
+    const product = await prisma.product.findFirst({
+      where: { id },
+      include: {
+        category: {
+          select: { name: true, slug: true },
+        },
+        sizes: {
+          select: { id: true, label: true, stockTotal: true, stockReserved: true },
+        },
+        collections: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    if (!product) return null;
+    return serializeProduct(product);
   });
 }

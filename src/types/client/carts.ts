@@ -26,5 +26,6 @@ export type CartSummary = {
   subtotal: string;
   shipping: string;
   total: string;
+  discountedTotal?: string;
   itemCount: number;
 };

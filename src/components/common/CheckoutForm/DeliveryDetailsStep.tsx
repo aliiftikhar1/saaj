@@ -45,6 +45,7 @@ export function DeliveryDetailsStep(props: DeliveryDetailsStepProps) {
       billingState: "",
       billingZipCode: "",
       billingCountry: "",
+      orderNote: "",
     },
   });
 
@@ -86,6 +87,15 @@ export function DeliveryDetailsStep(props: DeliveryDetailsStepProps) {
                 {deliveryData?.billingZipCode}
               </p>
               <p>{deliveryData?.billingCountry}</p>
+            </>
+          )}
+
+          {deliveryData?.orderNote && (
+            <>
+              <p className="font-medium text-neutral-12 mt-4 mb-2">
+                Order Note
+              </p>
+              <p className="text-neutral-10 italic">{deliveryData.orderNote}</p>
             </>
           )}
         </div>
@@ -140,7 +150,7 @@ export function DeliveryDetailsStep(props: DeliveryDetailsStepProps) {
             id="email"
             type="email"
             variant="light"
-            placeholder="amelia.clarke@cartelle.com"
+            placeholder="info@saajtradition.com"
             autoComplete="email"
             isError={!!errors.email}
             {...register("email")}
@@ -424,6 +434,26 @@ export function DeliveryDetailsStep(props: DeliveryDetailsStepProps) {
             </div>
           </div>
         </motion.div>
+
+        {/* Order Note */}
+        <div className="pt-4">
+          <label htmlFor="orderNote" className={labelClass}>
+            Order Note{" "}
+            <span className="text-neutral-08 font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="orderNote"
+            rows={3}
+            className="w-full rounded-md border border-neutral-05 bg-white px-3 py-2 text-sm text-neutral-11 placeholder:text-neutral-08 focus:outline-none focus:ring-2 focus:ring-neutral-07 resize-none"
+            placeholder="Add any special instructions or notes for your order..."
+            {...register("orderNote")}
+          />
+          {errors.orderNote && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.orderNote.message}
+            </p>
+          )}
+        </div>
 
         <div>
           <Button

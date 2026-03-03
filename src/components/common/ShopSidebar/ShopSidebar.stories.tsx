@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { ShopSidebar } from "./ShopSidebar";
-import { STORE_COLLECTIONS } from "@/lib";
+import { PRODUCT_CATEGORIES } from "@/lib";
 
 const meta = {
   title: "Common/ShopSidebar",
@@ -23,13 +23,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    collections: STORE_COLLECTIONS,
+    collections: PRODUCT_CATEGORIES,
   },
 };
 
 export const CollectionsOpen: Story = {
   args: {
-    collections: STORE_COLLECTIONS,
+    collections: PRODUCT_CATEGORIES,
     collectionsOpenByDefault: true,
   },
 };

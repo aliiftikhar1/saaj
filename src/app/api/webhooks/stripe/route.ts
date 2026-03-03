@@ -98,6 +98,22 @@ export async function POST(req: NextRequest) {
       });
 
       if (cartId) {
+        // Increment coupon usage if order had a coupon
+        try {
+          const paidOrder = await prisma.order.findUnique({
+            where: { id: orderId },
+            select: { couponCode: true },
+          });
+          if (paidOrder?.couponCode) {
+            await prisma.coupon.update({
+              where: { code: paidOrder.couponCode },
+              data: { currentUses: { increment: 1 } },
+            });
+          }
+        } catch (err) {
+          console.error("Failed to increment coupon usage:", err);
+        }
+
         revalidateTag(CACHE_TAG_CART, "default");
         revalidateTag(CACHE_TAG_PRODUCT, "default");
         revalidatePath(adminRoutes.orders);

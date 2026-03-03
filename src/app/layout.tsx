@@ -10,41 +10,41 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Cartelle",
-    template: "%s | Cartelle",
+    default: "Saaj Tradition",
+    template: "%s | Saaj Tradition",
   },
   description:
-    "Cartelle is a mock luxury clothing store featuring curated fashion, premium essentials, and designer-inspired collections.",
-  applicationName: "Cartelle",
+    "Saaj Tradition — Traditional Bahawalpuri Suits. Explore curated fashion, premium essentials, and designer-inspired collections.",
+  applicationName: "Saaj Tradition",
   keywords: [
-    "mock store",
-    "luxury clothing",
+    "traditional suits",
+    "bahawalpuri suits",
     "fashion",
     "designer",
     "premium apparel",
-    "cartelle",
+    "saaj tradition",
   ],
-  metadataBase: new URL("https://cartelle.example"),
+  metadataBase: new URL("https://saajtradition.example"),
   openGraph: {
-    title: "Cartelle",
+    title: "Saaj Tradition",
     description:
-      "A mock luxury clothing store with curated fashion and premium essentials.",
+      "Traditional Bahawalpuri Suits — curated fashion and premium essentials.",
     type: "website",
-    siteName: "Cartelle",
+    siteName: "Saaj Tradition",
     images: [
       {
         url: "/assets/logo.png",
         width: 1200,
         height: 630,
-        alt: "Cartelle",
+        alt: "Saaj Tradition",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cartelle",
+    title: "Saaj Tradition",
     description:
-      "A mock luxury clothing store with curated fashion and premium essentials.",
+      "Traditional Bahawalpuri Suits — curated fashion and premium essentials.",
     images: ["/assets/logo.png"],
   },
 };

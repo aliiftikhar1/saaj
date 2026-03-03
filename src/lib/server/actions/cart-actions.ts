@@ -12,16 +12,25 @@ import {
   MAX_CART_ITEM_QUANTITY,
   MAX_CART_TOTAL_QUANTITY,
 } from "@/lib/constants";
+import { COOKIE_COUPON_CODE } from "@/lib/constants/cookie-variables";
 import { Decimal } from "@prisma/client/runtime/library";
-import { CartQuantityReturn } from "@/types/client";
+import { CartQuantityReturn, FullCart } from "@/types/client";
 import { ServerActionResponse } from "@/types/server";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { CartStatus, OrderStatus, PaymentMethod, Prisma } from "@prisma/client";
 import { getCartCountCached, refreshCartCookie } from "../helpers";
 import { CACHE_TAG_CART, CACHE_TAG_PRODUCT } from "@/lib/constants";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
+import { getSiteContentByKey } from "@/lib/server/queries/site-content-queries";
+import { getCart } from "@/lib/server/queries/cart-queries";
 
 // === QUERIES ===
+export async function getCartAction(): Promise<
+  ServerActionResponse<FullCart>
+> {
+  return getCart();
+}
+
 export async function getCartItemCount(): Promise<
   ServerActionResponse<CartQuantityReturn>
 > {
@@ -324,8 +333,43 @@ export async function initiateCheckout(
   return wrapServerCall(async () => {
     const cookieStore = await cookies();
     const cartId = cookieStore.get(COOKIE_CART_ID)?.value;
+    const couponCode = cookieStore.get(COOKIE_COUPON_CODE)?.value;
 
     if (!cartId) throw new Error("Cart not found");
+
+    // === STEP 0: VALIDATE COUPON IF PRESENT ===
+    let validCoupon: {
+      code: string;
+      discountPercent: number;
+    } | null = null;
+
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+
+      if (
+        coupon &&
+        coupon.isActive &&
+        (!coupon.expiresAt || coupon.expiresAt > new Date()) &&
+        (!coupon.maxUses || coupon.currentUses < coupon.maxUses)
+      ) {
+        validCoupon = {
+          code: coupon.code,
+          discountPercent: coupon.discountPercent,
+        };
+      }
+    }
+
+    // === STEP 0.5: READ SHIPPING CHARGE FROM SITE CONTENT ===
+    let shippingCharge = 0;
+    const shippingResult = await getSiteContentByKey("shipping_charge");
+    if (shippingResult.success && shippingResult.data) {
+      const parsed = parseFloat(shippingResult.data.value);
+      if (!isNaN(parsed) && parsed > 0) {
+        shippingCharge = parsed;
+      }
+    }
 
     // === STEP 1: CHECK IF ORDER ALREADY EXISTS (outside transaction) ===
     const existingOrder = await prisma.order.findUnique({
@@ -393,10 +437,17 @@ export async function initiateCheckout(
         }
 
         // Calculate total price
-        const totalPrice = cart.items.reduce(
+        const subtotal = cart.items.reduce(
           (sum, item) => sum + item.unitPrice.toNumber() * item.quantity,
           0,
         );
+
+        // Apply coupon discount
+        let discountAmount = 0;
+        if (validCoupon) {
+          discountAmount = (subtotal * validCoupon.discountPercent) / 100;
+        }
+        const totalPrice = Math.max(subtotal - discountAmount + shippingCharge, 0);
 
         // Update cart and create/return order atomically
         if (existingOrder) {
@@ -408,7 +459,30 @@ export async function initiateCheckout(
               reservedAt: isDemoMode() ? null : (cart.reservedAt ?? new Date()),
             },
           });
-          return { id: existingOrder.id, totalPrice: existingOrder.totalPrice };
+
+          // Update coupon info on existing order
+          if (validCoupon) {
+            await tx.order.update({
+              where: { id: existingOrder.id },
+              data: {
+                couponCode: validCoupon.code,
+                discountPercent: validCoupon.discountPercent,
+                discountAmount: new Decimal(discountAmount),
+                shippingAmount: shippingCharge > 0 ? new Decimal(shippingCharge) : null,
+                totalPrice: new Decimal(totalPrice),
+              },
+            });
+          } else {
+            await tx.order.update({
+              where: { id: existingOrder.id },
+              data: {
+                shippingAmount: shippingCharge > 0 ? new Decimal(shippingCharge) : null,
+                totalPrice: new Decimal(totalPrice),
+              },
+            });
+          }
+
+          return { id: existingOrder.id, totalPrice: new Decimal(totalPrice) };
         } else {
           // Create order and update cart in parallel
           const [newOrder] = await Promise.all([
@@ -416,8 +490,16 @@ export async function initiateCheckout(
               data: {
                 cartId,
                 totalPrice,
+                shippingAmount: shippingCharge > 0 ? new Decimal(shippingCharge) : null,
                 status: OrderStatus.PENDING,
                 paymentMethod: PaymentMethod.STRIPE,
+                ...(validCoupon
+                  ? {
+                      couponCode: validCoupon.code,
+                      discountPercent: validCoupon.discountPercent,
+                      discountAmount: new Decimal(discountAmount),
+                    }
+                  : {}),
               },
               select: { id: true, totalPrice: true },
             }),

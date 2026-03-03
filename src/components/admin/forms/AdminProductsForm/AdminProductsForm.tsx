@@ -31,7 +31,6 @@ import { AdminProductsFormData, AdminProductsFormSchema } from "./schema";
 
 import {
   roundToTwoDecimals,
-  STORE_COLLECTIONS,
   API_ROUTES,
   SIZE_TEMPLATES,
 } from "@/lib";
@@ -42,17 +41,37 @@ import {
 } from "@/lib/server/actions";
 import { usePreviewUrls } from "@/hooks";
 import { CloseIcon } from "@/components/icons";
-import type { Product } from "@prisma/client";
-import { ProductCategoryEnum, SizeTypeEnum } from "@/types/client";
+import { SizeTypeEnum } from "@/types/client";
+
+type CategoryOption = { id: string; name: string };
+type CollectionOption = { id: string; name: string };
+
+type ProductFormData = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  compareAtPrice?: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  images: string[];
+  slug: string;
+  categoryId: string | null;
+  sizeType: SizeTypeEnum | null;
+  collectionIds?: string[];
+};
 
 type AdminProductsFormProps = {
   isEditMode?: boolean;
-  productData?: Omit<Product, "price"> & { price: number };
+  productData?: ProductFormData;
+  availableCollections?: CollectionOption[];
+  availableCategories?: CategoryOption[];
 };
 
 export function AdminProductsForm(props: AdminProductsFormProps) {
   // === PROPS ===
-  const { isEditMode = false, productData } = props;
+  const { isEditMode = false, productData, availableCollections = [], availableCategories = [] } = props;
 
   // === ROUTES ===
   const router = useRouter();
@@ -82,12 +101,16 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
       price: productData?.price
         ? Number(productData.price).toFixed(2)
         : undefined,
-      category: productData?.category,
+      compareAtPrice: productData?.compareAtPrice
+        ? Number(productData.compareAtPrice).toFixed(2)
+        : "",
+      category: productData?.categoryId ?? undefined,
       slug: productData?.slug,
       sizeType:
         isEditMode && productData?.sizeType ? productData?.sizeType : undefined,
       isActive: productData?.isActive ?? true,
       imageUrls: productData?.images || [],
+      collectionIds: productData?.collectionIds || [],
     },
   });
 
@@ -96,6 +119,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
   const sizeTypeValue = watch("sizeType");
   const isActiveValue = watch("isActive");
   const imageUrlsValue = watch("imageUrls");
+  const collectionIdsValue = watch("collectionIds") || [];
 
   // === MEMOS ===
   const savedImageUrls = useMemo(() => imageUrlsValue || [], [imageUrlsValue]);
@@ -349,6 +373,38 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
                 <AdminFieldError errors={[errors.price]} />
               </AdminField>
 
+              {/* COMPARE AT PRICE (SALE) */}
+              <AdminField>
+                <AdminFieldLabel htmlFor="compareAtPrice">
+                  Compare-at Price ($)
+                </AdminFieldLabel>
+                <AdminFieldDescription>
+                  Original price before sale. Leave empty if not on sale. Must be
+                  higher than the sale price above.
+                </AdminFieldDescription>
+                <AdminInput
+                  id="compareAtPrice"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder="e.g., 49.99"
+                  {...register("compareAtPrice", {
+                    setValueAs: (v) =>
+                      v === "" ? undefined : parseFloat(v),
+                    onBlur: (e) => {
+                      const v = e.target.value;
+                      if (!v) return;
+                      const rounded = roundToTwoDecimals(parseFloat(v));
+                      setValue("compareAtPrice", rounded, {
+                        shouldValidate: true,
+                      });
+                      e.target.value = rounded.toFixed(2);
+                    },
+                  })}
+                />
+                <AdminFieldError errors={[errors.compareAtPrice]} />
+              </AdminField>
+
               {/* IMAGES */}
               <AdminField>
                 <AdminFieldLabel htmlFor="productImages">
@@ -430,7 +486,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               <AdminSelect
                 value={categoryValue ?? ""}
                 onValueChange={(val) =>
-                  setValue("category", val as ProductCategoryEnum, {
+                  setValue("category", val, {
                     shouldValidate: true,
                   })
                 }
@@ -440,7 +496,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
                 </AdminSelectTrigger>
                 <AdminSelectContent>
                   <AdminSelectGroup>
-                    {STORE_COLLECTIONS.map((category) => (
+                    {availableCategories.map((category) => (
                       <AdminSelectItem key={category.id} value={category.id}>
                         {category.name}
                       </AdminSelectItem>
@@ -450,6 +506,42 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               </AdminSelect>
               <AdminFieldError errors={[errors.category]} />
             </AdminField>
+
+            {/* COLLECTIONS */}
+            {availableCollections.length > 0 && (
+              <AdminField>
+                <AdminFieldLabel>Collections</AdminFieldLabel>
+                <AdminFieldDescription>
+                  Select which collections this product belongs to.
+                </AdminFieldDescription>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {availableCollections.map((col) => {
+                    const isSelected = collectionIdsValue.includes(col.id);
+                    return (
+                      <button
+                        key={col.id}
+                        type="button"
+                        onClick={() => {
+                          const updated = isSelected
+                            ? collectionIdsValue.filter(
+                                (id) => id !== col.id,
+                              )
+                            : [...collectionIdsValue, col.id];
+                          setValue("collectionIds", updated);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                          isSelected
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-neutral-10 border-neutral-04 hover:border-black"
+                        }`}
+                      >
+                        {col.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </AdminField>
+            )}
 
             {/* SIZES */}
             <AdminField>

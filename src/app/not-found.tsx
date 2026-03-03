@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Button, Navbar } from "@/components";
 import { routes } from "@/lib";
-import { CartCountProvider, CartDialogProvider } from "@/providers";
-import { getCartItemCount } from "@/lib/server/actions";
+import { CartCountProvider, CartDialogProvider, CartSidebarProvider } from "@/providers";
+import { getCartItemCount, getCartAction } from "@/lib/server/actions";
 
 export const metadata: Metadata = {
   title: "Page Not Found",
@@ -14,9 +14,11 @@ export default function NotFound() {
     <>
       <header>
         <CartCountProvider fetchCartItemCount={getCartItemCount}>
-          <CartDialogProvider>
-            <Navbar />
-          </CartDialogProvider>
+          <CartSidebarProvider fetchCart={getCartAction}>
+            <CartDialogProvider>
+              <Navbar />
+            </CartDialogProvider>
+          </CartSidebarProvider>
         </CartCountProvider>
       </header>
       <main className="flex items-center my-8 justify-center px-4">

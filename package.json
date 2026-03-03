@@ -1,5 +1,5 @@
 {
-  "name": "cartelle-mock-store",
+  "name": "saaj-tradition",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,9 @@
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build",
     "postinstall": "prisma generate",
-    "update-deps": "npx npm-check-updates -u --target minor && npm install"
+    "update-deps": "npx npm-check-updates -u --target minor && npm install",
+    "seed": "npx tsx prisma/seed.ts",
+    "seed-admin": "npx tsx prisma/seed-admin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.2.2",

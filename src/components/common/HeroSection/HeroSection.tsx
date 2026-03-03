@@ -10,7 +10,15 @@ import { HeroSectionButton } from "./HeroSectionButton";
 
 const WAIT_FOR_IMAGE_TIMEOUT = 1800; // ms
 
-export function HeroSection() {
+type HeroSectionProps = {
+  heading?: string;
+  subheading?: string;
+};
+
+export function HeroSection({
+  heading = "Traditional Bahawalpuri Suits",
+  subheading = "Experience tradition, woven into every thread.",
+}: HeroSectionProps) {
   // === STATE ===
   const [imageReady, setImageReady] = useState(false);
 
@@ -60,11 +68,10 @@ export function HeroSection() {
             <HeroSectionButton className="order-2 xl:order-1 mt-6 xl:mt-0" />
             <div className="flex flex-col xl:text-end gap-4 xl:ms-auto order-1 xl:order-2">
               <h1 className={cn("text-[clamp(2.5rem,8vw,5rem)]!")}>
-                Curated Luxury
+                {heading}
               </h1>
               <h5 className="text-white md:text-neutral-04 font-medium">
-                Discover quality products with fast shipping and secure
-                checkout.
+                {subheading}
               </h5>
             </div>
           </div>

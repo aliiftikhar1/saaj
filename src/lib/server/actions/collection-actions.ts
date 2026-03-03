@@ -1,0 +1,118 @@
+"use server";
+
+import { put } from "@vercel/blob";
+import { revalidatePath } from "next/cache";
+
+import { prisma } from "@/lib/prisma";
+import { CollectionMutationInput, ServerActionResponse } from "@/types/server";
+import {
+  AdminFormAddCollectionData,
+  AdminFormEditCollectionData,
+} from "@/components/admin/forms/AdminCollectionsForm/schema";
+import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
+import { adminRoutes, routes } from "@/lib/routing";
+import { wrapServerCall } from "../helpers/generic-helpers";
+import { isDemoMode } from "@/lib/server/helpers/demo-mode";
+
+// === MUTATIONS ===
+export async function deleteCollectionById(
+  id: string,
+): Promise<ServerActionResponse<CollectionMutationInput>> {
+  return wrapServerCall(async () => {
+    if (isDemoMode()) {
+      return { id };
+    }
+
+    const deleted = await prisma.collection.delete({ where: { id } });
+
+    revalidatePath(adminRoutes.collections);
+    revalidatePath(routes.home);
+
+    return { id: deleted.id };
+  });
+}
+
+export async function createCollection(
+  data: AdminFormAddCollectionData,
+): Promise<ServerActionResponse<CollectionMutationInput>> {
+  return wrapServerCall(async () => {
+    if (isDemoMode()) {
+      return { id: `demo-${data.name.toLowerCase().replace(/\s+/g, "-")}` };
+    }
+
+    const imageFile = data.image;
+    const imageFileName = BLOB_STORAGE_PREFIXES.COLLECTIONS + data.slug;
+
+    const blob = await put(imageFileName, imageFile, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+
+    const maxOrder = await prisma.collection.aggregate({
+      _max: { sortOrder: true },
+    });
+
+    const created = await prisma.collection.create({
+      data: {
+        name: data.name,
+        tagline: data.tagline,
+        imageUrl: blob.url,
+        slug: data.slug,
+        sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
+      },
+    });
+
+    revalidatePath(adminRoutes.collections);
+    revalidatePath(routes.home);
+
+    return { id: created.id };
+  });
+}
+
+export async function updateCollectionById(
+  id: string,
+  data: AdminFormEditCollectionData,
+): Promise<ServerActionResponse<CollectionMutationInput>> {
+  return wrapServerCall(async () => {
+    if (isDemoMode()) {
+      return { id };
+    }
+
+    revalidatePath(adminRoutes.collections);
+    revalidatePath(routes.home);
+
+    if (data.image) {
+      const imageFile = data.image;
+      const imageFileName = BLOB_STORAGE_PREFIXES.COLLECTIONS + data.slug;
+
+      const blob = await put(imageFileName, imageFile, {
+        access: "public",
+        addRandomSuffix: true,
+      });
+
+      await prisma.collection.update({
+        where: { id },
+        data: {
+          name: data.name,
+          tagline: data.tagline,
+          imageUrl: blob.url,
+          slug: data.slug,
+          sortOrder: data.sortOrder,
+        },
+      });
+
+      return { id };
+    }
+
+    await prisma.collection.update({
+      where: { id },
+      data: {
+        name: data.name,
+        tagline: data.tagline,
+        slug: data.slug,
+        sortOrder: data.sortOrder,
+      },
+    });
+    return { id };
+  });
+}

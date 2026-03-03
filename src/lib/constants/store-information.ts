@@ -1,2 +1,2 @@
-export const STORE_EMAIL = "contact@cartelle.co.uk";
-export const STORE_PHONE = "+1-800-123-4567";
+export const STORE_EMAIL = "hunainsualeh8@gmail.com";
+export const STORE_PHONE = "+923106040861";

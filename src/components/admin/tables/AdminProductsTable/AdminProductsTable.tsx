@@ -36,7 +36,7 @@ import {
 } from "@/lib";
 import { productColumns, defaultVisibleProductColumnIds } from "./columns";
 import { ProductGetAllCounts } from "@/types/client";
-import { deleteProductById } from "@/lib/server/actions";
+import { deleteProductById, toggleProductFeatured } from "@/lib/server/actions";
 
 export function AdminProductsTable({
   products,
@@ -70,9 +70,10 @@ export function AdminProductsTable({
   const formatProducts = (products: ProductGetAllCounts[]) => {
     return products.map((product) => ({
       ...product,
-      category: screamingSnakeToTitle(product.category),
+      categoryName: product.categoryName,
       price: `${product.price.toFixed(2)}`,
       isActive: product.isActive ? "Yes" : "No",
+      isFeatured: product.isFeatured ? "Yes" : "No",
       createdAt: formatDateToYYYYMMDD(product.createdAt),
       updatedAt: formatDateToYYYYMMDD(product.updatedAt),
     }));
@@ -157,9 +158,40 @@ export function AdminProductsTable({
                   </AdminDropdownMenuTrigger>
 
                   <AdminDropdownMenuContent align="end">
+                    <Link href={`${adminRoutes.products}/${product.id}/view`}>
+                      <AdminDropdownMenuItem>View Details</AdminDropdownMenuItem>
+                    </Link>
                     <Link href={`${adminRoutes.products}/${product.id}`}>
                       <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
                     </Link>
+                    <AdminDropdownMenuSeparator />
+
+                    <AdminDropdownMenuItem
+                      onSelect={async () => {
+                        const result = await toggleProductFeatured(product.id);
+                        if (result.success) {
+                          setProductsState((prev) =>
+                            prev.map((p) =>
+                              p.id === product.id
+                                ? { ...p, isFeatured: result.data.isFeatured }
+                                : p,
+                            ),
+                          );
+                          toast.success(
+                            result.data.isFeatured
+                              ? "Product added to New Arrivals"
+                              : "Product removed from New Arrivals",
+                          );
+                        } else {
+                          toast.error("Failed to update featured status");
+                        }
+                      }}
+                    >
+                      {product.isFeatured === "Yes"
+                        ? "Remove from New Arrivals"
+                        : "Add to New Arrivals"}
+                    </AdminDropdownMenuItem>
+
                     <AdminDropdownMenuSeparator />
 
                     <AdminDropdownMenuItem

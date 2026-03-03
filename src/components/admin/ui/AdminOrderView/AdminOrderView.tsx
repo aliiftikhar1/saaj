@@ -1,9 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 import { GetAdminOrder } from "@/types/client";
 import { AdminButton } from "../AdminButton";
+import {
+  AdminSelect,
+  AdminSelectContent,
+  AdminSelectItem,
+  AdminSelectTrigger,
+  AdminSelectValue,
+} from "../AdminSelect";
+import { updateOrderStatus, updatePaymentStatus } from "@/lib/server/actions/order-actions";
+
+const ORDER_STATUSES = [
+  "PENDING",
+  "PAID",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "REFUNDED",
+] as const;
+
+const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
 
 type AdminOrderViewProps = {
   order: GetAdminOrder;
@@ -13,15 +35,43 @@ export function AdminOrderView(props: AdminOrderViewProps) {
   // === PROPS ===
   const { order } = props;
 
+  // === STATE ===
+  const [orderStatus, setOrderStatus] = useState(order.status);
+  const [paymentStat, setPaymentStat] = useState(order.paymentStatus);
+
   const handleExportPDF = () => {
-    // TO DO: Implement PDF export
     console.log("Export PDF for order:", order.id);
   };
 
   const handleEmailOrder = () => {
-    // TO DO: Implement email functionality
     console.log("Email order to:", order.deliveryEmail);
   };
+
+  const handleOrderStatusChange = async (newStatus: string) => {
+    const result = await updateOrderStatus(order.id, newStatus);
+    if (result.success) {
+      setOrderStatus(result.data.status as typeof orderStatus);
+      toast.success(`Order status updated to ${newStatus}`);
+    } else {
+      toast.error("Failed to update order status");
+    }
+  };
+
+  const handlePaymentStatusChange = async (newStatus: string) => {
+    const result = await updatePaymentStatus(order.id, newStatus);
+    if (result.success) {
+      setPaymentStat(result.data.paymentStatus as typeof paymentStat);
+      toast.success(`Payment status updated to ${newStatus}`);
+    } else {
+      toast.error("Failed to update payment status");
+    }
+  };
+
+  // === COMPUTED ===
+  const subtotal = order.cart.items.reduce(
+    (sum, item) => sum + item.unitPrice * item.quantity,
+    0,
+  );
 
   return (
     <div className="bg-white rounded-lg border border-neutral-04 p-4 md:p-6 space-y-6">
@@ -51,20 +101,56 @@ export function AdminOrderView(props: AdminOrderViewProps) {
       </div>
 
       {/* Order Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-neutral-01 p-4 rounded">
-          <p className="text-sm text-neutral-09 mb-1">Order Status</p>
-          <p className="font-semibold text-neutral-11">{order.status}</p>
+          <p className="text-sm text-neutral-09 mb-2">Order Status</p>
+          <AdminSelect value={orderStatus} onValueChange={handleOrderStatusChange}>
+            <AdminSelectTrigger className="w-full">
+              <AdminSelectValue />
+            </AdminSelectTrigger>
+            <AdminSelectContent>
+              {ORDER_STATUSES.map((s) => (
+                <AdminSelectItem key={s} value={s}>
+                  {s}
+                </AdminSelectItem>
+              ))}
+            </AdminSelectContent>
+          </AdminSelect>
         </div>
         <div className="bg-neutral-01 p-4 rounded">
-          <p className="text-sm text-neutral-09 mb-1">Payment Status</p>
-          <p className="font-semibold text-neutral-11">{order.paymentStatus}</p>
+          <p className="text-sm text-neutral-09 mb-2">Payment Status</p>
+          <AdminSelect value={paymentStat} onValueChange={handlePaymentStatusChange}>
+            <AdminSelectTrigger className="w-full">
+              <AdminSelectValue />
+            </AdminSelectTrigger>
+            <AdminSelectContent>
+              {PAYMENT_STATUSES.map((s) => (
+                <AdminSelectItem key={s} value={s}>
+                  {s}
+                </AdminSelectItem>
+              ))}
+            </AdminSelectContent>
+          </AdminSelect>
         </div>
         <div className="bg-neutral-01 p-4 rounded">
           <p className="text-sm text-neutral-09 mb-1">Payment Method</p>
           <p className="font-semibold text-neutral-11">{order.paymentMethod}</p>
         </div>
       </div>
+
+      {/* Customer Note */}
+      {order.orderNote && (
+        <div>
+          <h3 className="text-base md:text-lg font-semibold text-neutral-11 mb-3">
+            Customer Note
+          </h3>
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded">
+            <p className="text-sm text-neutral-11 italic whitespace-pre-wrap">
+              {order.orderNote}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Order Items */}
       <div>
@@ -109,15 +195,43 @@ export function AdminOrderView(props: AdminOrderViewProps) {
           ))}
         </div>
 
-        {/* Total */}
-        <div className="border-t border-neutral-04 mt-4 pt-4 flex justify-end">
-          <div className="text-right">
-            <p className="text-xs md:text-sm text-neutral-09 mb-1">
-              Total Amount
-            </p>
-            <p className="text-xl md:text-2xl font-bold text-neutral-11">
+        {/* Price Breakdown */}
+        <div className="border-t border-neutral-04 mt-4 pt-4 space-y-2">
+          <div className="flex justify-between text-sm text-neutral-10">
+            <span>Subtotal</span>
+            <span>${subtotal.toFixed(2)}</span>
+          </div>
+
+          {order.shippingAmount != null && (
+            <div className="flex justify-between text-sm text-neutral-10">
+              <span>Shipping</span>
+              <span>
+                {order.shippingAmount === 0
+                  ? "Free"
+                  : `$${order.shippingAmount.toFixed(2)}`}
+              </span>
+            </div>
+          )}
+
+          {order.couponCode && (
+            <div className="flex justify-between text-sm text-green-700">
+              <span>
+                Coupon ({order.couponCode}
+                {order.discountPercent ? ` — ${order.discountPercent}%` : ""})
+              </span>
+              <span>
+                {order.discountAmount
+                  ? `-$${order.discountAmount.toFixed(2)}`
+                  : "—"}
+              </span>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-2 border-t border-neutral-04">
+            <span className="text-base font-bold text-neutral-11">Total</span>
+            <span className="text-xl md:text-2xl font-bold text-neutral-11">
               ${order.totalPrice.toFixed(2)}
-            </p>
+            </span>
           </div>
         </div>
       </div>

@@ -7,21 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// === CATEGORY ===
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  tagline   String    @default("")
+  imageUrl  String    @default("")
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
 // === PRODUCT ===
 model Product {
-  id          String              @id @default(cuid())
-  name        String
-  description String
-  price       Decimal             @db.Decimal(10, 2)
-  isActive    Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  images      String[]
-  slug        String              @unique
-  category    ProductCategoryEnum
-  cartItems   CartItem[]
-  sizeType    SizeTypeEnum?
-  sizes       Size[]
+  id             String              @id @default(cuid())
+  name           String
+  description    String
+  price          Decimal             @db.Decimal(10, 2)
+  compareAtPrice Decimal?            @db.Decimal(10, 2)
+  isActive       Boolean             @default(true)
+  isFeatured     Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  images         String[]
+  slug           String              @unique
+  categoryId     String?
+  category       Category?           @relation(fields: [categoryId], references: [id])
+  cartItems      CartItem[]
+  sizeType       SizeTypeEnum?
+  sizes          Size[]
+  collections    Collection[]
+
+  @@index([categoryId])
 }
 
 model Size {
@@ -38,14 +57,6 @@ enum SizeTypeEnum {
   Standard
   ShoeSize
   OneSize
-}
-
-enum ProductCategoryEnum {
-  DRESSES
-  OUTERWEAR
-  TOPS_BOTTOMS
-  BAGS_ACCESSORIES
-  SHOES
 }
 
 // === CART ===
@@ -128,10 +139,21 @@ model Order {
   stripeSessionId String? @unique
 
   // === Payment & Status Details ===
-  totalPrice    Decimal       @db.Decimal(10, 2)
-  paymentMethod PaymentMethod @default(STRIPE)
-  paymentStatus PaymentStatus @default(PENDING)
-  status        OrderStatus   @default(PENDING)
+  totalPrice      Decimal       @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod @default(STRIPE)
+  paymentStatus   PaymentStatus @default(PENDING)
+  status          OrderStatus   @default(PENDING)
+
+  // === Shipping Details ===
+  shippingAmount  Decimal?      @db.Decimal(10, 2)
+
+  // === Coupon Details ===
+  couponCode      String?
+  discountPercent Int?
+  discountAmount  Decimal?      @db.Decimal(10, 2)
+
+  // === Customer Note ===
+  orderNote       String?
 
   @@index([deliveryEmail])
   @@index([status])
@@ -191,4 +213,82 @@ enum BlogCategory {
   STYLE_GUIDES
   DESIGNERS
   FASHION_NEWS
+}
+
+// === COLLECTION ===
+model Collection {
+  id        String    @id @default(cuid())
+  name      String
+  tagline   String
+  imageUrl  String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+// === TEAM MEMBER ===
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  imageSrc  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// === SITE CONTENT (CMS) ===
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  label     String
+  group     String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// === TESTIMONIAL ===
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  text      String
+  rating    Int      @default(5)
+  imageSrc  String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// === COUPON ===
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  discountPercent Int
+  maxUses         Int?
+  currentUses     Int       @default(0)
+  isActive        Boolean   @default(true)
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// === ADMIN USER ===
+model AdminUser {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  role         AdminRoleEnum @default(ADMIN)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum AdminRoleEnum {
+  SUPER_ADMIN
+  ADMIN
 }

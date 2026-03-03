@@ -6,6 +6,7 @@ type ProductTileProps = {
   id: string;
   name: string;
   price: number;
+  compareAtPrice?: number | null;
   primaryImageUrl: string;
   hoverImageUrl: string;
   priority?: boolean;
@@ -18,27 +19,41 @@ export function ProductTile(props: ProductTileProps) {
     id,
     name,
     price,
+    compareAtPrice,
     primaryImageUrl,
     hoverImageUrl,
     priority = false,
     slug = "",
   } = props;
 
+  const isOnSale = compareAtPrice != null && compareAtPrice > price;
+  const discountPercent = isOnSale
+    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
+    : 0;
+
   return (
     <Link
       id={id}
       href={slug ? `${routes.product}/${slug}` : `${routes.product}/${id}`}
-      className="group relative flex flex-col gap-3 w-full"
+      className="group flex flex-col w-full"
     >
-      <div className="relative aspect-square overflow-hidden rounded-sm">
+      {/* Image Container */}
+      <div className="relative aspect-[5/6] overflow-hidden bg-neutral-02 rounded-sm">
+        {/* Sale Badge */}
+        {isOnSale && (
+          <span className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded">
+            -{discountPercent}%
+          </span>
+        )}
+
         {/* Primary Image */}
         <Image
           src={primaryImageUrl}
           alt={name}
           fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
           priority={priority}
-          className="object-cover transition-all duration-700 ease-in-out group-hover:opacity-0"
+          className="object-cover w-full h-full transition-opacity duration-500 ease-in-out group-hover:opacity-0"
         />
 
         {/* Hover Image */}
@@ -46,23 +61,32 @@ export function ProductTile(props: ProductTileProps) {
           src={hoverImageUrl}
           alt={`${name} - alternate view`}
           fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="object-cover transition-all duration-700 ease-in-out opacity-0 group-hover:opacity-100"
+          sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+          className="object-cover w-full h-full transition-opacity duration-500 ease-in-out opacity-0 group-hover:opacity-100"
         />
-
-        {/* View Button Overlay */}
-        <div className="absolute inset-0 flex items-end justify-end p-5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-in-out">
-          <button className="bg-black h-12 w-12 text-sm text-white p-2 rounded-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-700 ease-in-out">
-            View
-          </button>
-        </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <p className="text-lg text-neutral-12 line-clamp-2 font-medium">
+      {/* Info */}
+      <div className="pt-2 pb-1 flex flex-col gap-0.5">
+        <p className="text-xs sm:text-sm text-neutral-11 truncate leading-tight">
           {name}
         </p>
-        <p className="text-base text-neutral-10 ">${price.toFixed(2)}</p>
+        <div className="flex items-center gap-1.5">
+          {isOnSale ? (
+            <>
+              <span className="text-xs sm:text-sm font-medium text-red-600">
+                ${price.toFixed(2)}
+              </span>
+              <span className="text-[10px] sm:text-xs text-neutral-07 line-through">
+                ${compareAtPrice.toFixed(2)}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs sm:text-sm text-neutral-09">
+              ${price.toFixed(2)}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );

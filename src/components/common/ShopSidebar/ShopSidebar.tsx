@@ -9,14 +9,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui";
 
-import { cn, routes, STORE_COLLECTIONS } from "@/lib";
+import { cn, routes } from "@/lib";
 import { ShopSidebarCollectionItem } from "./ShopSidebarCollectionItem";
 
 export const linkClasses =
   "flex text-neutral-11 hover:text-neutral-10 transition-colors text-base";
 
 type ShopSideBarProps = {
-  collections: typeof STORE_COLLECTIONS;
+  collections: { name: string; slug: string }[];
   collectionsOpenByDefault?: boolean;
 };
 

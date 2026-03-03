@@ -4,3 +4,8 @@ export * from "./carts";
 export * from "./checkout";
 export * from "./order";
 export * from "./product";
+export * from "./collection";
+export * from "./team";
+export * from "./site-content";
+export * from "./testimonial";
+export * from "./coupon";

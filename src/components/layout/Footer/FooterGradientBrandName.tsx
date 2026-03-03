@@ -14,7 +14,7 @@ export function FooterGradientBrandName() {
         "xl:text-[clamp(1.5rem,14vw,15rem)]",
       )}
     >
-      Cartelle
+      Saaj Tradition
     </span>
   );
 }

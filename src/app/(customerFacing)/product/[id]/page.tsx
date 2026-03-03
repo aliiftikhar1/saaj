@@ -3,17 +3,16 @@ import {
   BaseSection,
   BreadCrumb,
   ProductTile,
+  ProductImageGallery,
 } from "@/components";
 import type { Metadata } from "next";
 import { ProductPurchasePanel } from "@/components/common/ProductPurchasePanel/ProductPurchasePanel";
 import {
-  BLOG_NAVBAR_TEXT,
   SHOP_NAVBAR_TEXT,
 } from "@/components/layout/Navbar/lib";
-import { cn, routes } from "@/lib";
+import { routes } from "@/lib";
 import { getProductBySlug, getThreeRandomProducts } from "@/lib/server/queries";
 import { SizeTypeEnum } from "@prisma/client";
-import Image from "next/image";
 
 type ProductPageProps = {
   params: {
@@ -80,28 +79,16 @@ export default async function ProductPage(props: ProductPageProps) {
             />
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative">
-            <div className="w-full lg:w-[60%] flex flex-col gap-6">
-              {product.images.map((imageUrl, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "relative w-full h-full aspect-square",
-                    index !== 0 && "hidden lg:block",
-                  )}
-                >
-                  <Image
-                    priority={index === 0}
-                    src={imageUrl}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 1280px) 100vw, 65vw"
-                    className="object-cover rounded-sm"
-                  />
-                </div>
-              ))}
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 relative">
+            {/* Image Gallery */}
+            <div className="w-full lg:w-[50%] lg:max-w-[560px]">
+              <ProductImageGallery
+                images={product.images}
+                productName={product.name}
+              />
             </div>
 
+            {/* Purchase Panel */}
             <ProductPurchasePanel
               product={product}
               defaultSize={
@@ -110,27 +97,6 @@ export default async function ProductPage(props: ProductPageProps) {
                   : ""
               }
             />
-
-            <div className="flex flex-col gap-6">
-              {product.images.map((imageUrl, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "relative w-full h-full aspect-square lg:hidden",
-                    index === 0 && "hidden",
-                  )}
-                >
-                  <Image
-                    priority={index === 0}
-                    src={imageUrl}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 1280px) 100vw, 65vw"
-                    className="object-cover rounded-sm"
-                  />
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </BaseSection>
@@ -139,7 +105,7 @@ export default async function ProductPage(props: ProductPageProps) {
         className="pt-10 pb-16 xl:pb-20 flex flex-col gap-8"
       >
         <AnimatedHeadingText text="Browse more" variant="product-page-title" />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full relative">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full relative">
           {threeRandomProducts.length === 0 && (
             <p>No other products available</p>
           )}

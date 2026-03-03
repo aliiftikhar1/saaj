@@ -1,7 +1,7 @@
 export const routes = {
   home: "/",
   about: "/about",
-  support: "/support",
+  location: "/location",
   blog: "/blog",
   product: "/product",
   shop: "/shop",
@@ -25,4 +25,24 @@ export const adminRoutes = {
 
   authors: "/admin/authors",
   authorsCreate: "/admin/authors/create",
+
+  categories: "/admin/categories",
+  categoriesCreate: "/admin/categories/create",
+
+  collections: "/admin/collections",
+  collectionsCreate: "/admin/collections/create",
+
+  team: "/admin/team",
+  teamCreate: "/admin/team/create",
+
+  siteContent: "/admin/site-content",
+
+  testimonials: "/admin/testimonials",
+  testimonialsCreate: "/admin/testimonials/create",
+
+  coupons: "/admin/coupons",
+  couponsCreate: "/admin/coupons/create",
+
+  admins: "/admin/admins",
+  settings: "/admin/settings",
 };

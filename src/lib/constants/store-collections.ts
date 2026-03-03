@@ -1,42 +1,25 @@
-import type { ProductCategoryEnum } from "@/types/client";
+/**
+ * Category type for client-side use.
+ * Categories are now fetched from the database via getAllCategories().
+ *
+ * This file is kept for backward compatibility. Use getAllCategories() from
+ * "@/lib/server/queries" in server components, or pass categories as props.
+ */
 
-const CATEGORY_METADATA: Record<
-  ProductCategoryEnum,
-  { name: string; tagline: string; imageUrl: string }
-> = {
-  DRESSES: {
-    name: "Dresses",
-    tagline: "Timeless elegance in every silhouette.",
-    imageUrl: "/assets/store-collection-dresses.jpg",
-  },
-  OUTERWEAR: {
-    name: "Outerwear",
-    tagline: "Impeccable craftsmanship meets modern protection.",
-    imageUrl: "/assets/store-collection-outerwear.jpg",
-  },
-  TOPS_BOTTOMS: {
-    name: "Tops & Bottoms",
-    tagline: "Essential pieces, elevated design.",
-    imageUrl: "/assets/store-collection-tops-bottoms.jpg",
-  },
-  BAGS_ACCESSORIES: {
-    name: "Bags & Accessories",
-    tagline: "The finishing touch to refined style.",
-    imageUrl: "/assets/store-collection-bags-accessories.jpg",
-  },
-  SHOES: {
-    name: "Shoes",
-    tagline: "Artisanal footwear for the discerning.",
-    imageUrl: "/assets/store-collection-shoes.jpg",
-  },
+export type CategoryItem = {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  imageUrl: string;
+  sortOrder: number;
 };
 
-export const STORE_COLLECTIONS = Object.entries(CATEGORY_METADATA).map(
-  ([category, metadata]) => ({
-    id: category,
-    name: metadata.name,
-    tagline: metadata.tagline,
-    imageUrl: metadata.imageUrl,
-    slug: category.toLowerCase().replace("_", "-"),
-  }),
-);
+/**
+ * @deprecated Use getAllCategories() from "@/lib/server/queries" instead.
+ * This empty array exists only to prevent import errors during migration.
+ */
+export const PRODUCT_CATEGORIES: CategoryItem[] = [];
+
+/** @deprecated Use getAllCategories() from "@/lib/server/queries" instead. */
+export const STORE_COLLECTIONS = PRODUCT_CATEGORIES;

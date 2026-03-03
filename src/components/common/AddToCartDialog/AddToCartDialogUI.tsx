@@ -24,6 +24,7 @@ type AddToCartDialogUIProps = {
   size?: string;
   category?: string;
   quantity?: number;
+  onViewCart?: () => void;
   checkoutButton: ReactNode;
 };
 
@@ -38,6 +39,7 @@ export function AddToCartDialogUI(props: AddToCartDialogUIProps) {
     size,
     category,
     quantity,
+    onViewCart,
     checkoutButton,
   } = props;
 
@@ -83,13 +85,22 @@ export function AddToCartDialogUI(props: AddToCartDialogUIProps) {
 
           {/* ACTION BUTTONS */}
           <div className="flex flex-col gap-2.5">
-            <Link
-              href="/cart"
-              className={getButtonStyles("light")}
-              onClick={() => onOpenChange(false)}
-            >
-              View Cart{quantity ? ` (${quantity})` : ""}
-            </Link>
+            {onViewCart ? (
+              <button
+                onClick={onViewCart}
+                className={getButtonStyles("light")}
+              >
+                View Cart{quantity ? ` (${quantity})` : ""}
+              </button>
+            ) : (
+              <Link
+                href="/cart"
+                className={getButtonStyles("light")}
+                onClick={() => onOpenChange(false)}
+              >
+                View Cart{quantity ? ` (${quantity})` : ""}
+              </Link>
+            )}
 
             {checkoutButton}
           </div>

@@ -45,6 +45,11 @@ export type OrderWithCart = {
   billingCountry: string | null;
   stripeSessionId: string | null;
   totalPrice: number;
+  shippingAmount: number | null;
+  couponCode: string | null;
+  discountPercent: number | null;
+  discountAmount: number | null;
+  orderNote: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
@@ -92,6 +97,11 @@ export type GetAdminOrder = {
   billingState: string | null;
   billingCountry: string | null;
   totalPrice: number;
+  shippingAmount: number | null;
+  couponCode: string | null;
+  discountPercent: number | null;
+  discountAmount: number | null;
+  orderNote: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;

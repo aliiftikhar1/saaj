@@ -18,7 +18,7 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
         items: [],
         summary: {
           subtotal: "$0.00",
-          shipping: "Free",
+          shipping: "Calculated at checkout",
           total: "$0.00",
           itemCount: 0,
         },
@@ -38,7 +38,7 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
         items: [],
         summary: {
           subtotal: "$0.00",
-          shipping: "Free",
+          shipping: "Calculated at checkout",
           total: "$0.00",
           itemCount: 0,
         },
@@ -88,7 +88,7 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
 
     const summary: CartSummary = {
       subtotal: `$${subtotalDecimal.toFixed(2)}`,
-      shipping: "Free",
+      shipping: "Calculated at checkout",
       total: `$${subtotalDecimal.toFixed(2)}`,
       itemCount,
     };

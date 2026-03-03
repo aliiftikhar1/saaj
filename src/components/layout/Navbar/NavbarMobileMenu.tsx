@@ -1,53 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import { motion } from "framer-motion";
-
-import { CheveronRightIcon } from "@/components";
 import { cn } from "@/lib";
-import { navItems } from "./lib/constants";
-import { useMeasureHeight } from "./hooks";
+import type { NavItemType } from "./types";
 
-// === LINE LINK ITEM ===
-type NavbarMobileLineItemLinkProps = {
-  href: string;
-  text: string;
-  onClick: () => void;
-};
-
-function NavbarMobileLineItemLink({
-  href,
-  text,
-  onClick,
-}: NavbarMobileLineItemLinkProps) {
-  return (
-    <Link href={href} onClick={onClick} className="text-navbar w-full py-3">
-      {text}
-    </Link>
-  );
-}
-
-// === LINE BUTTON PARENT ITEM ===
-type NavbarMobileParentItemProps = {
-  text: string;
-  onClick: () => void;
-};
-
-function NavbarMobileParentItem({
-  text,
-  onClick,
-}: NavbarMobileParentItemProps) {
-  return (
-    <button
-      className="text-navbar cursor-pointer w-full flex justify-between items-center py-3"
-      onClick={onClick}
-    >
-      <span>{text}</span>
-      <CheveronRightIcon />
-    </button>
-  );
-}
+import { CheveronRightIcon, CheveronLeftIcon } from "@/components";
 
 // === MOBILE MENU MAIN COMPONENT ===
 type NavbarMobileMenuProps = {
@@ -55,6 +12,8 @@ type NavbarMobileMenuProps = {
   setShowMobileMenu: (show: boolean) => void;
   activeSubMenu?: string | null;
   setActiveSubMenu: (subMenu: string | null) => void;
+  navItems: NavItemType[];
+  isActive: (href: string) => boolean;
 };
 
 export function NavbarMobileMenu({
@@ -62,105 +21,139 @@ export function NavbarMobileMenu({
   setShowMobileMenu,
   activeSubMenu,
   setActiveSubMenu,
+  navItems,
+  isActive,
 }: NavbarMobileMenuProps) {
-  const contentRef = useRef<HTMLDivElement | null>(null);
-  const contentHeight = useMeasureHeight({ ref: contentRef });
-
   const isSubMenuActive = activeSubMenu !== null;
+  const activeSubItem = navItems.find((item) => item.id === activeSubMenu);
 
   return (
     <>
-      <motion.div
+      {/* Backdrop overlay */}
+      <div
         className={cn(
-          "bg-white absolute top-full left-0 right-0 md:hidden shadow-mobile-menu rounded-b-sm overflow-hidden z-10",
-          showMobileMenu ? "will-change-height-opacity" : "will-change-auto",
+          "fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+          showMobileMenu
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
         )}
-        initial={{ height: 0, opacity: 0 }}
-        animate={{
-          height: showMobileMenu ? contentHeight : 0,
-          opacity: showMobileMenu ? 1 : 0,
+        onClick={() => {
+          setShowMobileMenu(false);
+          setActiveSubMenu(null);
         }}
-        transition={{
-          duration: 0.3,
-          ease: "easeInOut",
-        }}
+      />
+
+      {/* Mobile menu panel */}
+      <div
+        className={cn(
+          "fixed top-0 right-0 bottom-0 z-50 w-full max-w-[320px] bg-white md:hidden",
+          "transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          showMobileMenu ? "translate-x-0" : "translate-x-full",
+        )}
       >
-        <div ref={contentRef} className="flex flex-col pb-4 px-5">
-          {/* ROOT MENU NO LAYERS DOWN */}
-          {!isSubMenuActive && showMobileMenu && (
-            <>
-              {navItems.map((item) => {
-                if (item.subItems) {
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 h-[56px] border-b border-neutral-03/60">
+            {isSubMenuActive ? (
+              <button
+                onClick={() => setActiveSubMenu(null)}
+                className="flex items-center gap-1 text-[13px] text-neutral-10 hover:text-neutral-12 transition-colors cursor-pointer"
+              >
+                <CheveronLeftIcon />
+                <span>Back</span>
+              </button>
+            ) : (
+              <span className="text-[13px] font-medium text-neutral-10 tracking-[-0.01em] uppercase">
+                Menu
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setShowMobileMenu(false);
+                setActiveSubMenu(null);
+              }}
+              className="text-[13px] text-neutral-10 hover:text-neutral-12 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Nav content */}
+          <div className="flex-1 overflow-y-auto py-2">
+            {/* Root menu */}
+            {!isSubMenuActive && (
+              <div className="flex flex-col">
+                {navItems.map((item) => {
+                  if (item.subItems) {
+                    return (
+                      <button
+                        key={item.id}
+                        className={cn(
+                          "flex items-center justify-between w-full px-6 py-3.5 transition-colors cursor-pointer",
+                          isActive(item.href)
+                            ? "text-neutral-12"
+                            : "text-neutral-10 hover:text-neutral-12",
+                        )}
+                        onClick={() => setActiveSubMenu(item.id)}
+                      >
+                        <span className="text-[15px] tracking-[-0.02em] font-normal">
+                          {item.text}
+                        </span>
+                        <CheveronRightIcon />
+                      </button>
+                    );
+                  }
+
                   return (
-                    <NavbarMobileParentItem
+                    <Link
                       key={item.id}
-                      text={item.text}
-                      onClick={() =>
-                        setActiveSubMenu(
-                          activeSubMenu === item.id ? null : item.id,
-                        )
-                      }
-                    />
-                  );
-                }
-
-                return (
-                  <NavbarMobileLineItemLink
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setShowMobileMenu(false)}
-                    text={item.text}
-                  />
-                );
-              })}
-            </>
-          )}
-
-          {/* SUBMENU */}
-          {isSubMenuActive && (
-            <div>
-              {navItems
-                .find((item) => item.id === activeSubMenu)
-                ?.subItems?.map((subItem, index) => (
-                  <div
-                    key={subItem.id}
-                    className={cn("flex flex-col", index > 0 && "mt-6")}
-                  >
-                    <p
+                      href={item.href}
+                      onClick={() => setShowMobileMenu(false)}
                       className={cn(
-                        index === 0 && "pt-2",
-                        "text-navbar-light mb-2",
+                        "flex items-center px-6 py-3.5 transition-colors",
+                        isActive(item.href)
+                          ? "text-neutral-12"
+                          : "text-neutral-10 hover:text-neutral-12",
                       )}
                     >
+                      <span className="text-[15px] tracking-[-0.02em] font-normal">
+                        {item.text}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Submenu */}
+            {isSubMenuActive && activeSubItem?.subItems && (
+              <div className="flex flex-col">
+                {activeSubItem.subItems.map((subItem, index) => (
+                  <div key={subItem.id} className="flex flex-col">
+                    {index > 0 && (
+                      <div className="mx-6 border-t border-neutral-03/60" />
+                    )}
+                    <p className="px-6 pt-4 pb-1 text-[11px] font-medium uppercase tracking-[0.04em] text-neutral-08">
                       {subItem.text}
                     </p>
-                    <div className="flex flex-col">
-                      {subItem.items.map((item) => (
-                        <NavbarMobileLineItemLink
-                          key={item.id}
-                          href={item.href}
-                          onClick={() => setShowMobileMenu(false)}
-                          text={item.text}
-                        />
-                      ))}
-                    </div>
+                    {subItem.items.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => setShowMobileMenu(false)}
+                        className="px-6 py-3 text-[15px] tracking-[-0.02em] text-neutral-10 hover:text-neutral-12 transition-colors"
+                      >
+                        {item.text}
+                      </Link>
+                    ))}
                   </div>
                 ))}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </motion.div>
-
-      {/* OVERLAY */}
-      {showMobileMenu && (
-        <div
-          className="fixed inset-0 md:hidden"
-          onClick={() => {
-            setShowMobileMenu(false);
-            setActiveSubMenu(null);
-          }}
-        />
-      )}
+      </div>
     </>
   );
 }
+

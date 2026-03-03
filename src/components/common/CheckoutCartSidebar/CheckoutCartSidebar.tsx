@@ -5,11 +5,22 @@ import { calculateMockArrivalDate } from "@/lib/utils";
 type CheckoutCartSidebarProps = {
   items: CartItemWithDetails[];
   summary: CartSummary;
+  discount?: {
+    code: string;
+    percent: number;
+    amount: string;
+  } | null;
+  shippingAmount?: number;
 };
 
 export function CheckoutCartSidebar(props: CheckoutCartSidebarProps) {
   // === PROPS ===
-  const { items, summary } = props;
+  const { items, summary, discount, shippingAmount } = props;
+
+  const shippingDisplay =
+    shippingAmount && shippingAmount > 0
+      ? `$${shippingAmount.toFixed(2)}`
+      : "Free";
 
   return (
     <div className="w-full self-start">
@@ -37,16 +48,23 @@ export function CheckoutCartSidebar(props: CheckoutCartSidebarProps) {
             <span className="text-neutral-12">{summary.subtotal}</span>
           </div>
 
+          {discount && (
+            <div className="flex justify-between text-base text-green-700">
+              <span>Discount ({discount.code})</span>
+              <span>-{discount.amount}</span>
+            </div>
+          )}
+
           <div className="flex justify-between text-base">
-            <span className="text-neutral-10">Estimated Shipping</span>
-            <span className="text-neutral-12">{summary.shipping}</span>
+            <span className="text-neutral-10">Shipping</span>
+            <span className="text-neutral-12">{shippingDisplay}</span>
           </div>
 
           <div className="border-t border-neutral-5 pt-4">
             <div className="flex justify-between text-lg">
               <span className="text-neutral-12 font-medium text-lg">Total</span>
               <span className="text-neutral-12 font-medium text-lg">
-                {summary.total}
+                {discount ? summary.discountedTotal || summary.total : summary.total}
               </span>
             </div>
           </div>

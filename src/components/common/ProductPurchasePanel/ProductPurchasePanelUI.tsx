@@ -60,9 +60,16 @@ export function ProductPurchasePanelUI(props: ProductPurchasePanelUIProps) {
     <div className="w-full lg:w-[40%] flex flex-col gap-8 lg:gap-10 lg:sticky lg:top-22 self-start">
       <div className="flex flex-col gap-2">
         <AnimatedHeadingText text={product.name} variant="product-page-title" />
-        <h4 className="text-xl md:text-2xl font-medium pb-2">
-          ${product.price}
-        </h4>
+        <div className="flex items-baseline gap-2 pb-2">
+          <h4 className="text-xl md:text-2xl font-medium">
+            ${product.price.toFixed(2)}
+          </h4>
+          {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <span className="text-base text-neutral-8 line-through">
+              ${product.compareAtPrice.toFixed(2)}
+            </span>
+          )}
+        </div>
         <p className="text-neutral-10 text-sm">{product.description}</p>
       </div>
 
@@ -89,11 +96,20 @@ export function ProductPurchasePanelUI(props: ProductPurchasePanelUIProps) {
               }}
               value={selectedSize}
             >
-              {product.sizes.map((size) => (
-                <ToggleGroupItem key={size.id} value={size.id}>
-                  {size.label?.toUpperCase()}
-                </ToggleGroupItem>
-              ))}
+              {product.sizes.map((size) => {
+                const available = size.stockTotal - size.stockReserved;
+                const isOutOfStock = available <= 0;
+                return (
+                  <ToggleGroupItem
+                    key={size.id}
+                    value={size.id}
+                    disabled={isOutOfStock}
+                    className={isOutOfStock ? "opacity-40 line-through cursor-not-allowed" : ""}
+                  >
+                    {size.label?.toUpperCase()}
+                  </ToggleGroupItem>
+                );
+              })}
             </ToggleGroup>
           </div>
         )}

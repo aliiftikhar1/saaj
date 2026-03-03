@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Order, OrderStatus } from "@prisma/client";
+import { Order, OrderStatus, PaymentStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { ServerActionResponse } from "@/types/server";
@@ -75,6 +75,8 @@ export async function updateOrderDetails(
           ? input.country
           : input.billingCountry,
 
+        orderNote: input.orderNote ?? null,
+
         updatedAt: new Date(),
       },
     });
@@ -82,5 +84,57 @@ export async function updateOrderDetails(
     revalidatePath(adminRoutes.orders);
 
     return orderId;
+  });
+}
+
+/** Update order status (admin) */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string,
+): Promise<ServerActionResponse<{ id: string; status: string }>> {
+  return wrapServerCall(async () => {
+    const validStatuses = Object.values(OrderStatus);
+    if (!validStatuses.includes(status as OrderStatus)) {
+      throw new Error(`Invalid order status: ${status}`);
+    }
+
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new Error("Order not found");
+
+    const updated = await prisma.order.update({
+      where: { id: orderId },
+      data: { status: status as OrderStatus, updatedAt: new Date() },
+    });
+
+    revalidatePath(adminRoutes.orders);
+    revalidatePath(`${adminRoutes.orders}/${orderId}`);
+
+    return { id: updated.id, status: updated.status };
+  });
+}
+
+/** Update payment status (admin) */
+export async function updatePaymentStatus(
+  orderId: string,
+  paymentStatus: string,
+): Promise<ServerActionResponse<{ id: string; paymentStatus: string }>> {
+  return wrapServerCall(async () => {
+    const validStatuses = Object.values(PaymentStatus);
+    if (!validStatuses.includes(paymentStatus as PaymentStatus)) {
+      throw new Error(`Invalid payment status: ${paymentStatus}`);
+    }
+
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new Error("Order not found");
+
+    const updated = await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentStatus: paymentStatus as PaymentStatus, updatedAt: new Date() },
+    });
+
+    revalidatePath(adminRoutes.orders);
+    revalidatePath(`${adminRoutes.orders}/${orderId}`);
+
+    return { id: updated.id, paymentStatus: updated.paymentStatus };
   });
 }

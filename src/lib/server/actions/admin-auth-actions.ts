@@ -1,0 +1,261 @@
+"use server";
+
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { prisma } from "@/lib/prisma";
+import { hashPassword, verifyPassword } from "../helpers/password";
+import { ServerActionResponse } from "@/types/server";
+import { wrapServerCall } from "../helpers/generic-helpers";
+import { AdminRoleEnum } from "@prisma/client";
+
+const ADMIN_COOKIE_NAME = "admin_session";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+// =====================================
+// AUTH
+// =====================================
+
+/** Login with email + password */
+export async function adminLogin(
+  _prevState: { error: string } | null,
+  formData: FormData,
+): Promise<{ error: string } | null> {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const redirectTo = formData.get("redirect") as string;
+
+  if (!email || !password) {
+    return { error: "Email and password are required" };
+  }
+
+  const admin = await prisma.adminUser.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
+
+  if (!admin || !admin.isActive) {
+    return { error: "Invalid email or password" };
+  }
+
+  const valid = verifyPassword(password, admin.passwordHash);
+  if (!valid) {
+    return { error: "Invalid email or password" };
+  }
+
+  // Store admin ID + role in cookie (JSON encoded, base64)
+  const sessionData = JSON.stringify({
+    id: admin.id,
+    role: admin.role,
+  });
+  const token = Buffer.from(sessionData).toString("base64");
+
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: COOKIE_MAX_AGE,
+  });
+
+  redirect(redirectTo || "/admin");
+}
+
+/** Logout — clear session cookie */
+export async function adminLogout(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(ADMIN_COOKIE_NAME);
+  redirect("/admin/login");
+}
+
+/** Get the currently logged-in admin from cookie */
+export async function getCurrentAdmin() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
+  if (!token) return null;
+
+  try {
+    const decoded = JSON.parse(Buffer.from(token, "base64").toString("utf-8"));
+    const admin = await prisma.adminUser.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, name: true, role: true, isActive: true },
+    });
+    if (!admin || !admin.isActive) return null;
+    return admin;
+  } catch {
+    return null;
+  }
+}
+
+// =====================================
+// PASSWORD UPDATE
+// =====================================
+
+/** Update own password */
+export async function updateAdminPassword(
+  _prevState: { success: boolean; message: string } | null,
+  formData: FormData,
+): Promise<{ success: boolean; message: string }> {
+  const currentPassword = formData.get("currentPassword") as string;
+  const newPassword = formData.get("newPassword") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return { success: false, message: "All fields are required" };
+  }
+
+  if (newPassword.length < 6) {
+    return { success: false, message: "New password must be at least 6 characters" };
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { success: false, message: "New passwords do not match" };
+  }
+
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return { success: false, message: "Not authenticated" };
+  }
+
+  const fullAdmin = await prisma.adminUser.findUnique({ where: { id: admin.id } });
+  if (!fullAdmin) {
+    return { success: false, message: "Admin not found" };
+  }
+
+  const valid = verifyPassword(currentPassword, fullAdmin.passwordHash);
+  if (!valid) {
+    return { success: false, message: "Current password is incorrect" };
+  }
+
+  await prisma.adminUser.update({
+    where: { id: admin.id },
+    data: { passwordHash: hashPassword(newPassword) },
+  });
+
+  return { success: true, message: "Password updated successfully" };
+}
+
+// =====================================
+// ADMIN MANAGEMENT (Super Admin only)
+// =====================================
+
+/** Create a new admin user (Super Admin only) */
+export async function createAdminUser(
+  _prevState: { success: boolean; message: string } | null,
+  formData: FormData,
+): Promise<{ success: boolean; message: string }> {
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const role = formData.get("role") as string;
+
+  if (!name || !email || !password) {
+    return { success: false, message: "All fields are required" };
+  }
+
+  if (password.length < 6) {
+    return { success: false, message: "Password must be at least 6 characters" };
+  }
+
+  const currentAdmin = await getCurrentAdmin();
+  if (!currentAdmin || currentAdmin.role !== AdminRoleEnum.SUPER_ADMIN) {
+    return { success: false, message: "Only Super Admins can create new admins" };
+  }
+
+  const existing = await prisma.adminUser.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
+  if (existing) {
+    return { success: false, message: "An admin with this email already exists" };
+  }
+
+  await prisma.adminUser.create({
+    data: {
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      passwordHash: hashPassword(password),
+      role: role === "SUPER_ADMIN" ? AdminRoleEnum.SUPER_ADMIN : AdminRoleEnum.ADMIN,
+      isActive: true,
+    },
+  });
+
+  return { success: true, message: `Admin "${name}" created successfully` };
+}
+
+/** Toggle admin active status (Super Admin only) */
+export async function toggleAdminStatus(
+  adminId: string,
+): Promise<ServerActionResponse<{ id: string }>> {
+  return wrapServerCall(async () => {
+    const currentAdmin = await getCurrentAdmin();
+    if (!currentAdmin || currentAdmin.role !== AdminRoleEnum.SUPER_ADMIN) {
+      throw new Error("Only Super Admins can manage admins");
+    }
+
+    if (currentAdmin.id === adminId) {
+      throw new Error("You cannot deactivate yourself");
+    }
+
+    const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
+    if (!admin) throw new Error("Admin not found");
+
+    await prisma.adminUser.update({
+      where: { id: adminId },
+      data: { isActive: !admin.isActive },
+    });
+
+    return { id: adminId };
+  });
+}
+
+/** Delete admin user (Super Admin only) */
+export async function deleteAdminUser(
+  adminId: string,
+): Promise<ServerActionResponse<{ id: string }>> {
+  return wrapServerCall(async () => {
+    const currentAdmin = await getCurrentAdmin();
+    if (!currentAdmin || currentAdmin.role !== AdminRoleEnum.SUPER_ADMIN) {
+      throw new Error("Only Super Admins can delete admins");
+    }
+
+    if (currentAdmin.id === adminId) {
+      throw new Error("You cannot delete yourself");
+    }
+
+    await prisma.adminUser.delete({ where: { id: adminId } });
+    return { id: adminId };
+  });
+}
+
+/** Get all admin users (Super Admin only) */
+export async function getAllAdminUsers(): Promise<
+  ServerActionResponse<
+    Array<{
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      isActive: boolean;
+      createdAt: Date;
+    }>
+  >
+> {
+  return wrapServerCall(async () => {
+    const currentAdmin = await getCurrentAdmin();
+    if (!currentAdmin || currentAdmin.role !== AdminRoleEnum.SUPER_ADMIN) {
+      throw new Error("Only Super Admins can view admin users");
+    }
+
+    return prisma.adminUser.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+  });
+}

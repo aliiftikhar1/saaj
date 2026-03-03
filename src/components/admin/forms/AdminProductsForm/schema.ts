@@ -1,4 +1,4 @@
-import { ProductCategoryEnum, SizeTypeEnum } from "@/types/client";
+import { SizeTypeEnum } from "@/types/client";
 import { z } from "zod";
 
 export const AdminProductsFormSchema = (isEditMode: boolean) =>
@@ -12,8 +12,17 @@ export const AdminProductsFormSchema = (isEditMode: boolean) =>
         .positive("Price must be a positive number")
         .multipleOf(0.01, "Price must be valid"),
 
-      category: ProductCategoryEnum.optional().refine(
-        (val) => val !== undefined,
+      compareAtPrice: z.coerce
+        .number()
+        .positive("Compare-at price must be positive")
+        .multipleOf(0.01, "Compare-at price must be valid")
+        .optional()
+        .or(z.literal("").transform(() => undefined)),
+
+      collectionIds: z.array(z.string()).optional(),
+
+      category: z.string().min(1, "Category is required").optional().refine(
+        (val) => val !== undefined && val !== "",
         {
           message: "Category is required",
         },

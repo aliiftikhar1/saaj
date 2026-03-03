@@ -2,7 +2,6 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 
-import { ProductCategoryEnum } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 
 import { prisma } from "@/lib/prisma";
@@ -36,7 +35,10 @@ export async function createProduct(
         name: data.name,
         description: data.description,
         price: new Decimal(data.price),
-        category: data.category as ProductCategoryEnum,
+        compareAtPrice: data.compareAtPrice
+          ? new Decimal(data.compareAtPrice)
+          : null,
+        categoryId: data.category || null,
         slug: data.slug,
         isActive: data.isActive,
         images: data.imageUrls,
@@ -45,6 +47,10 @@ export async function createProduct(
         sizes: {
           create: sizes,
         },
+
+        ...(data.collectionIds?.length
+          ? { collections: { connect: data.collectionIds.map((id) => ({ id })) } }
+          : {}),
       },
     });
 
@@ -70,10 +76,16 @@ export async function updateProductById(
         name: data.name,
         description: data.description,
         price: data.price,
-        category: data.category as ProductCategoryEnum,
+        compareAtPrice: data.compareAtPrice
+          ? new Decimal(data.compareAtPrice)
+          : null,
+        categoryId: data.category || null,
         slug: data.slug,
         isActive: data.isActive,
         images: data.imageUrls,
+        collections: {
+          set: (data.collectionIds || []).map((cid) => ({ id: cid })),
+        },
       },
     });
 
@@ -98,5 +110,29 @@ export async function deleteProductById(
     revalidateTag(CACHE_TAG_PRODUCT, "default");
 
     return { id: deleted.id };
+  });
+}
+
+/** Toggle the isFeatured flag on a product */
+export async function toggleProductFeatured(
+  id: string,
+): Promise<ServerActionResponse<{ id: string; isFeatured: boolean }>> {
+  return wrapServerCall(async () => {
+    if (isDemoMode()) {
+      return { id, isFeatured: false };
+    }
+
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) throw new Error("Product not found");
+
+    const updated = await prisma.product.update({
+      where: { id },
+      data: { isFeatured: !product.isFeatured },
+    });
+
+    revalidatePath(adminRoutes.products);
+    revalidateTag(CACHE_TAG_PRODUCT, "default");
+
+    return { id: updated.id, isFeatured: updated.isFeatured };
   });
 }

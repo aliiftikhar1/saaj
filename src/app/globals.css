@@ -438,3 +438,13 @@ Max width utilities
     @apply bg-background text-foreground;
   }
 }
+
+/* Admin navbar loading bar */
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}

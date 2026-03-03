@@ -19,6 +19,8 @@ export const deliveryDetailsSchema = z
     billingState: z.string().optional(),
     billingZipCode: z.string().optional(),
     billingCountry: z.string().optional(),
+
+    orderNote: z.string().max(500, "Note must be under 500 characters").optional(),
   })
   .superRefine((data, ctx) => {
     if (data.useSameBillingAddress) return;

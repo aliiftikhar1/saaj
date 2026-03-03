@@ -11,4 +11,5 @@ export * from "./AdminTextarea";
 export * from "./AdminSelect";
 export * from "./AdminCheckbox";
 export * from "./AdminOrderView";
+export * from "./AdminProductView";
 export * from "./AdminDashboardStats";

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AdminBaseTable,
@@ -13,11 +14,30 @@ import {
   AdminDropdownMenuItem,
   AdminDropdownMenuLabel,
   AdminDropdownMenuCheckboxItem,
+  AdminDropdownMenuSeparator,
   AdminInput,
+  AdminSelect,
+  AdminSelectContent,
+  AdminSelectItem,
+  AdminSelectTrigger,
+  AdminSelectValue,
 } from "@/components/admin";
 import { adminRoutes, formatDateToYYYYMMDD } from "@/lib";
 import { orderColumns, defaultVisibleOrderColumnIds } from "./columns";
 import { OrderWithCart } from "@/types/client";
+import { updateOrderStatus, updatePaymentStatus } from "@/lib/server/actions/order-actions";
+
+const ORDER_STATUSES = [
+  "PENDING",
+  "PAID",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "REFUNDED",
+] as const;
+
+const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
 
 type AdminOrdersTableProps = {
   orders: OrderWithCart[];
@@ -29,11 +49,42 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
 
   // === STATE ===
   const [searchTerm, setSearchTerm] = useState("");
+  const [ordersState, setOrdersState] = useState(orders);
   const [columnsVisible, setColumnsVisible] = useState<Set<string>>(
     defaultVisibleOrderColumnIds,
   );
 
   // === FUNCTIONS ===
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const result = await updateOrderStatus(orderId, newStatus);
+    if (result.success) {
+      setOrdersState((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: result.data.status as OrderWithCart["status"] } : o,
+        ),
+      );
+      toast.success(`Order status updated to ${newStatus}`);
+    } else {
+      toast.error("Failed to update order status");
+    }
+  };
+
+  const handlePaymentStatusChange = async (orderId: string, newStatus: string) => {
+    const result = await updatePaymentStatus(orderId, newStatus);
+    if (result.success) {
+      setOrdersState((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, paymentStatus: result.data.paymentStatus as OrderWithCart["paymentStatus"] }
+            : o,
+        ),
+      );
+      toast.success(`Payment status updated to ${newStatus}`);
+    } else {
+      toast.error("Failed to update payment status");
+    }
+  };
+
   const formatOrders = (orders: OrderWithCart[]) => {
     return orders.map((order) => {
       const itemsCount = order.cart.items.reduce(
@@ -53,7 +104,7 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
 
   // === MEMO ===
   const filteredOrders = formatOrders(
-    orders.filter(
+    ordersState.filter(
       (order) =>
         order.deliveryEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.orderNumber.toString().includes(searchTerm),
@@ -114,25 +165,45 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
               const order = cell.row.original;
 
               return (
-                <AdminDropdownMenu>
-                  <AdminDropdownMenuTrigger asChild>
-                    <AdminButton variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal />
-                    </AdminButton>
-                  </AdminDropdownMenuTrigger>
-
-                  <AdminDropdownMenuContent
-                    className="cursor-pointer"
-                    align="end"
+                <div className="flex items-center gap-2">
+                  {/* Order Status Dropdown */}
+                  <AdminSelect
+                    value={order.status}
+                    onValueChange={(val) => handleStatusChange(order.id, val)}
                   >
-                    <Link href={`${adminRoutes.orders}/${order.id}`}>
-                      <AdminDropdownMenuItem>
-                        View Details
-                      </AdminDropdownMenuItem>
-                    </Link>
-                  </AdminDropdownMenuContent>
-                </AdminDropdownMenu>
+                    <AdminSelectTrigger className="w-[130px] h-8 text-xs">
+                      <AdminSelectValue />
+                    </AdminSelectTrigger>
+                    <AdminSelectContent>
+                      {ORDER_STATUSES.map((s) => (
+                        <AdminSelectItem key={s} value={s}>
+                          {s}
+                        </AdminSelectItem>
+                      ))}
+                    </AdminSelectContent>
+                  </AdminSelect>
+
+                  {/* Actions Menu */}
+                  <AdminDropdownMenu>
+                    <AdminDropdownMenuTrigger asChild>
+                      <AdminButton variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal />
+                      </AdminButton>
+                    </AdminDropdownMenuTrigger>
+
+                    <AdminDropdownMenuContent
+                      className="cursor-pointer"
+                      align="end"
+                    >
+                      <Link href={`${adminRoutes.orders}/${order.id}`}>
+                        <AdminDropdownMenuItem>
+                          View Details
+                        </AdminDropdownMenuItem>
+                      </Link>
+                    </AdminDropdownMenuContent>
+                  </AdminDropdownMenu>
+                </div>
               );
             },
           },

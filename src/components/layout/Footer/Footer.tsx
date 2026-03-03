@@ -1,7 +1,8 @@
-import { AnimateFadeIn, Button, CustomLink, Input } from "@/components";
+import { AnimateFadeIn, CustomLink } from "@/components";
 import { routes, STORE_EMAIL, STORE_PHONE } from "@/lib";
 
 import { FooterGradientBrandName } from "./FooterGradientBrandName";
+import { NewsletterForm } from "./NewsletterForm";
 
 export function Footer() {
   return (
@@ -9,7 +10,7 @@ export function Footer() {
       <footer className="bg-black mx-auto py-10 px-5 md:px-10 xl:px-11 flex flex-col">
         <AnimateFadeIn className="flex flex-col md:flex-row justify-between w-full">
           <div className="flex flex-col pb-10 md:pb-0">
-            <h3 className="mb-6 text-white">Cartelle</h3>
+            <h3 className="mb-6 text-white">Saaj Tradition</h3>
             <div className="flex flex-col gap-2">
               <CustomLink
                 variant="on-dark-secondary"
@@ -30,8 +31,8 @@ export function Footer() {
               <CustomLink variant="on-dark" href={routes.about} text="About" />
               <CustomLink
                 variant="on-dark"
-                href={routes.support}
-                text="Support"
+                href={routes.location}
+                text="Location"
               />
               <CustomLink variant="on-dark" href={routes.blog} text="Blog" />
             </div>
@@ -55,22 +56,7 @@ export function Footer() {
             <FooterGradientBrandName />
           </div>
           <div className="w-full xl:w-5/12 flex flex-col gap-2 order-1 xl:order-2">
-            <label className="text-white" htmlFor="newsletter">
-              <h5>Newsletter</h5>
-            </label>
-            <div className="flex flex-col md:flex-row w-full gap-2">
-              <Input
-                className="flex-1 w-full md:w-auto"
-                id="newsletter"
-                type="email"
-                placeholder="Enter your email"
-              />
-              <Button
-                className="w-full md:w-auto"
-                variant="dark-alternative"
-                text="Sign up to newsletter"
-              />
-            </div>
+            <NewsletterForm />
           </div>
         </AnimateFadeIn>
       </footer>

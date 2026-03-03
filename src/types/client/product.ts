@@ -1,31 +1,39 @@
 import z from "zod";
 
 // === ENUMS ===
-export const ProductCategoryEnum = z.enum([
-  "DRESSES",
-  "OUTERWEAR",
-  "TOPS_BOTTOMS",
-  "BAGS_ACCESSORIES",
-  "SHOES",
-]);
-
-export type ProductCategoryEnum = z.infer<typeof ProductCategoryEnum>;
-
 export const SizeTypeEnum = z.enum(["Standard", "ShoeSize", "OneSize"]);
 export type SizeTypeEnum = z.infer<typeof SizeTypeEnum>;
+
+// === SERIALIZED PRODUCT (Decimals converted to numbers) ===
+export type SerializedProduct = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  compareAtPrice: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  images: string[];
+  slug: string;
+  categoryId: string | null;
+  category?: { name: string; slug: string } | null;
+  sizeType: string | null;
+};
 
 // === PRODUCT WITH ORDER ITEM COUNTS ===
 export type ProductGetAllCounts = {
   id: string;
   name: string;
   description: string;
-  price: number; // Converted from Decimal
-  isActive: boolean;
+  price: number; // Converted from Decimal  compareAtPrice: number | null;  isActive: boolean;
+  isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
   images: string[];
   slug: string;
-  category: string;
+  categoryId: string | null;
+  categoryName: string;
   sizeType: string | null;
   totalSold: number;
 };
@@ -35,13 +43,13 @@ export type ProductWithSizes = {
   id: string;
   name: string;
   description: string;
-  price: number; // Converted from Decimal
-  isActive: boolean;
+  price: number; // Converted from Decimal  compareAtPrice: number | null;  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
   images: string[];
   slug: string;
-  category: string;
+  categoryId: string | null;
+  category?: { name: string; slug: string } | null;
   sizeType: string | null;
   sizes: Array<{
     id: string;

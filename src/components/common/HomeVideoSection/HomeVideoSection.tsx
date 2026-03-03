@@ -1,6 +1,12 @@
 import { cn } from "@/lib";
 
-export function HomeVideoSection() {
+type HomeVideoSectionProps = {
+  text?: string;
+};
+
+export function HomeVideoSection({
+  text = "Discover a brand where style, quality, and craftsmanship come together.",
+}: HomeVideoSectionProps) {
   return (
     <>
       <video
@@ -26,8 +32,7 @@ export function HomeVideoSection() {
       />
       <div className="absolute bottom-0 left-0 right-0 flex justify-center">
         <h2 className="pb-16 px-4 sm:px-10 md:px-18 lg:px-30 xl:px-40 text-white text-center text-3xl sm:text-4xl md:text-5xl xl:text-6xl max-w-[1350px]">
-          Discover a brand where style, quality, and craftsmanship come
-          together.
+          {text}
         </h2>
       </div>
     </>

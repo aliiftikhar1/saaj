@@ -55,6 +55,8 @@ export async function getAdminOrderById(
     return {
       ...order,
       totalPrice: Number(order.totalPrice),
+      shippingAmount: order.shippingAmount ? Number(order.shippingAmount) : null,
+      discountAmount: order.discountAmount ? Number(order.discountAmount) : null,
       cart: {
         ...order.cart,
         items: order.cart.items.map((item) => ({
@@ -71,7 +73,6 @@ export async function getOrderedOrders(): Promise<
 > {
   return wrapServerCall(async () => {
     const orders = await prisma.order.findMany({
-      where: { status: OrderStatus.PAID },
       include: {
         cart: {
           include: {
@@ -85,6 +86,8 @@ export async function getOrderedOrders(): Promise<
     return orders.map((order) => ({
       ...order,
       totalPrice: Number(order.totalPrice),
+      shippingAmount: order.shippingAmount ? Number(order.shippingAmount) : null,
+      discountAmount: order.discountAmount ? Number(order.discountAmount) : null,
       cart: {
         ...order.cart,
         items: order.cart.items.map((item) => ({

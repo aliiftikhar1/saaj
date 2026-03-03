@@ -11,17 +11,54 @@ import {
   TeamMemberCard,
 } from "@/components";
 
+import { aboutImageSrcArray } from "@/lib";
 import {
-  aboutFeatureCardsData,
-  aboutImageSrcArray,
-  aboutTeamMembersData,
-} from "@/lib";
+  getTeamMembers,
+  getSiteContentMap,
+} from "@/lib/server/queries";
 
 export const metadata: Metadata = {
   title: "About",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const teamResponse = await getTeamMembers();
+  const teamMembers = teamResponse.success ? teamResponse.data : [];
+
+  const contentMapResponse = await getSiteContentMap();
+  const c = contentMapResponse.success ? contentMapResponse.data : {};
+
+  const featureCards = [
+    {
+      number: "01",
+      title: c.about_feature_1_title || "Premium Quality",
+      description:
+        c.about_feature_1_description ||
+        "We source only the finest materials to ensure every piece meets our high standards of excellence.",
+    },
+    {
+      number: "02",
+      title: c.about_feature_2_title || "Sustainable Fashion",
+      description:
+        c.about_feature_2_description ||
+        "Committed to eco-friendly practices and ethical production methods that protect our planet.",
+    },
+    {
+      number: "03",
+      title: c.about_feature_3_title || "Expert Craftsmanship",
+      description:
+        c.about_feature_3_description ||
+        "Each item is carefully crafted by skilled artisans with decades of combined experience.",
+    },
+    {
+      number: "04",
+      title: c.about_feature_4_title || "Customer First",
+      description:
+        c.about_feature_4_description ||
+        "Your satisfaction is our priority with dedicated support and hassle-free returns.",
+    },
+  ];
+
   return (
     <main>
       <BaseSection
@@ -36,9 +73,8 @@ export default function AboutPage() {
             className="pb-1"
           />
           <p className="text-neutral-10 text-base">
-            {
-              "Get to know who we are, what we stand for, and why we love what we do."
-            }
+            {c.about_subtitle ||
+              "Get to know who we are, what we stand for, and why we love what we do."}
           </p>
         </div>
         <div className="w-full z-10 relative overflow-hidden">
@@ -91,7 +127,7 @@ export default function AboutPage() {
             />
           </div>
           <div className="grid xl:col-span-1 grid-cols-1 md:grid-cols-2 xl:grid-rows-2 xl:auto-rows-min gap-y-10 gap-x-6 md:border-y py-10">
-            {aboutFeatureCardsData.map((card) => (
+            {featureCards.map((card) => (
               <AnimateFadeIn key={card.number}>
                 <FeatureCard
                   number={card.number}
@@ -108,9 +144,12 @@ export default function AboutPage() {
         id="about-us-section-team"
         className="py-16 xl:py-20 gap-8 flex flex-col"
       >
-        <SectionHeading heading="Meet Our Team" subheading="The superheroes" />
+        <SectionHeading
+          heading={c.about_team_heading || "Meet Our Team"}
+          subheading={c.about_team_subheading || "The superheroes"}
+        />
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          {aboutTeamMembersData.map((member, index) => (
+          {teamMembers.map((member, index) => (
             <AnimateFadeIn delay={index * 0.15} key={member.name}>
               <TeamMemberCard
                 imageSrc={member.imageSrc}
@@ -124,7 +163,10 @@ export default function AboutPage() {
 
       <div className="relative bg-main-01">
         <BaseSection id="support-newsletter-section" className="py-16 xl:py-20">
-          <NewsletterCard />
+          <NewsletterCard
+            heading={c.newsletter_heading}
+            description={c.newsletter_description}
+          />
         </BaseSection>
       </div>
     </main>
