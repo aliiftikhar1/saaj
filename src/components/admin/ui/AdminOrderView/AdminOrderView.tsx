@@ -40,7 +40,140 @@ export function AdminOrderView(props: AdminOrderViewProps) {
   const [paymentStat, setPaymentStat] = useState(order.paymentStatus);
 
   const handleExportPDF = () => {
-    console.log("Export PDF for order:", order.id);
+    const subtotalVal = order.cart.items.reduce(
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0,
+    );
+
+    const itemsHtml = order.cart.items
+      .map(
+        (item) => `
+        <tr>
+          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;">
+            <div style="font-weight:500;">${item.title}</div>
+            <div style="color:#6b7280;font-size:12px;">Size: ${item.size.label}</div>
+          </td>
+          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:center;color:#6b7280;">${item.quantity}</td>
+          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:right;color:#6b7280;">$${item.unitPrice.toFixed(2)}</td>
+          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:500;">$${(item.unitPrice * item.quantity).toFixed(2)}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const deliveryHtml = order.delieveryName
+      ? `<div style="margin-bottom:24px;">
+          <h3 style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:8px;">Delivery</h3>
+          <p style="margin:2px 0;">${order.delieveryName}</p>
+          ${order.deliveryEmail ? `<p style="margin:2px 0;">${order.deliveryEmail}</p>` : ""}
+          ${order.deliveryPhone ? `<p style="margin:2px 0;">${order.deliveryPhone}</p>` : ""}
+          ${order.deliveryStreetAddress ? `<p style="margin:2px 0;">${order.deliveryStreetAddress}</p>` : ""}
+          ${[order.deliveryCity, order.deliveryState, order.deliveryPostcode].filter(Boolean).join(", ")}
+          ${order.deliveryCountry ? `<p style="margin:2px 0;">${order.deliveryCountry}</p>` : ""}
+        </div>`
+      : "";
+
+    const billingHtml = order.billingName
+      ? `<div style="margin-bottom:24px;">
+          <h3 style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:8px;">Billing</h3>
+          <p style="margin:2px 0;">${order.billingName}</p>
+          ${order.billingStreetAddress ? `<p style="margin:2px 0;">${order.billingStreetAddress}</p>` : ""}
+          ${[order.billingCity, order.billingState, order.billingPostcode].filter(Boolean).join(", ")}
+          ${order.billingCountry ? `<p style="margin:2px 0;">${order.billingCountry}</p>` : ""}
+        </div>`
+      : "";
+
+    const couponHtml = order.couponCode
+      ? `<tr>
+          <td colspan="2" style="padding:4px 0;color:#16a34a;">Coupon (${order.couponCode}${order.discountPercent ? ` — ${order.discountPercent}%` : ""})</td>
+          <td style="padding:4px 0;text-align:right;color:#16a34a;">${order.discountAmount ? `-$${order.discountAmount.toFixed(2)}` : "—"}</td>
+        </tr>`
+      : "";
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order #${order.orderNumber}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; color: #111; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 700; }
+    h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e5e5; }
+    table { width: 100%; border-collapse: collapse; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;">
+    <div>
+      <h1>Order #${order.orderNumber}</h1>
+      <p style="color:#6b7280;font-size:12px;margin-top:4px;">
+        ${new Date(order.createdAt).toLocaleDateString()} at ${new Date(order.createdAt).toLocaleTimeString()}
+      </p>
+    </div>
+    <div style="text-align:right;">
+      <span style="display:inline-block;padding:4px 10px;background:#f3f4f6;border-radius:4px;font-size:12px;font-weight:600;">${order.status}</span>
+      <br/>
+      <span style="display:inline-block;margin-top:4px;padding:4px 10px;background:#f3f4f6;border-radius:4px;font-size:12px;font-weight:600;">${order.paymentStatus}</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <h2>Order Items</h2>
+    <table>
+      <thead>
+        <tr style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">
+          <th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e5e5e5;">Item</th>
+          <th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e5e5e5;">Qty</th>
+          <th style="padding:6px 4px;text-align:right;border-bottom:2px solid #e5e5e5;">Unit</th>
+          <th style="padding:6px 4px;text-align:right;border-bottom:2px solid #e5e5e5;">Total</th>
+        </tr>
+      </thead>
+      <tbody>${itemsHtml}</tbody>
+    </table>
+  </div>
+
+  <div style="margin-left:auto;width:260px;margin-bottom:32px;">
+    <table>
+      <tbody>
+        <tr>
+          <td colspan="2" style="padding:4px 0;color:#6b7280;">Subtotal</td>
+          <td style="padding:4px 0;text-align:right;">$${subtotalVal.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px 0;color:#6b7280;">Shipping</td>
+          <td style="padding:4px 0;text-align:right;">${order.shippingAmount === 0 ? "Free" : `$${order.shippingAmount?.toFixed(2) ?? "—"}`}</td>
+        </tr>
+        ${couponHtml}
+        <tr style="border-top:2px solid #111;">
+          <td colspan="2" style="padding:8px 0 0;font-weight:700;font-size:15px;">Total</td>
+          <td style="padding:8px 0 0;text-align:right;font-weight:700;font-size:18px;">$${order.totalPrice.toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+    ${deliveryHtml}
+    ${billingHtml}
+  </div>
+
+  ${order.orderNote ? `
+  <div style="margin-top:24px;padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;">
+    <p style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:4px;">Customer Note</p>
+    <p style="font-size:13px;color:#111;white-space:pre-wrap;">${order.orderNote}</p>
+  </div>` : ""}
+</body>
+</html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      win.print();
+    }, 500);
   };
 
   const handleEmailOrder = () => {

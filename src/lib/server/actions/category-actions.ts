@@ -1,23 +1,41 @@
 "use server";
 
+import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { CategoryMutationInput, ServerActionResponse } from "@/types/server";
 import { adminRoutes, routes } from "@/lib/routing";
+import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 
-// === MUTATIONS ===
-export async function createCategory(data: {
+type CategoryInput = {
   name: string;
   slug: string;
   tagline?: string;
   imageUrl?: string;
-}): Promise<ServerActionResponse<CategoryMutationInput>> {
+  image?: Blob;
+};
+
+// === MUTATIONS ===
+export async function createCategory(
+  data: CategoryInput,
+): Promise<ServerActionResponse<CategoryMutationInput>> {
   return wrapServerCall(async () => {
     if (isDemoMode()) {
       return { id: `demo-${data.slug}` };
+    }
+
+    let resolvedImageUrl = data.imageUrl ?? "";
+
+    if (data.image && data.image.size > 0) {
+      const blob = await put(
+        BLOB_STORAGE_PREFIXES.CATEGORIES + data.slug,
+        data.image,
+        { access: "public", addRandomSuffix: true },
+      );
+      resolvedImageUrl = blob.url;
     }
 
     const maxOrder = await prisma.category.aggregate({
@@ -29,7 +47,7 @@ export async function createCategory(data: {
         name: data.name,
         slug: data.slug,
         tagline: data.tagline ?? "",
-        imageUrl: data.imageUrl ?? "",
+        imageUrl: resolvedImageUrl,
         sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
       },
     });
@@ -43,16 +61,22 @@ export async function createCategory(data: {
 
 export async function updateCategoryById(
   id: string,
-  data: {
-    name: string;
-    slug: string;
-    tagline?: string;
-    imageUrl?: string;
-  },
+  data: CategoryInput,
 ): Promise<ServerActionResponse<CategoryMutationInput>> {
   return wrapServerCall(async () => {
     if (isDemoMode()) {
       return { id };
+    }
+
+    let resolvedImageUrl = data.imageUrl ?? "";
+
+    if (data.image && data.image.size > 0) {
+      const blob = await put(
+        BLOB_STORAGE_PREFIXES.CATEGORIES + data.slug,
+        data.image,
+        { access: "public", addRandomSuffix: true },
+      );
+      resolvedImageUrl = blob.url;
     }
 
     const updated = await prisma.category.update({
@@ -61,7 +85,7 @@ export async function updateCategoryById(
         name: data.name,
         slug: data.slug,
         tagline: data.tagline ?? "",
-        imageUrl: data.imageUrl ?? "",
+        imageUrl: resolvedImageUrl,
       },
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useCartCount } from "@/providers";
 import { clearCart } from "@/lib/server/actions";
 import { CheckoutSuccessUI } from "./CheckoutSuccessUI";
@@ -17,11 +17,16 @@ export function CheckoutSuccess(props: CheckoutSuccessProps) {
   // === CONTEXT ===
   const { refreshCartCount } = useCartCount();
 
-  // EFFECTS
+  // Guard so this only runs once even if the component re-renders
+  const hasRun = useRef(false);
+
   useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
     clearCart();
     refreshCartCount();
-  }, [refreshCartCount]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <CheckoutSuccessUI orderNumber={orderNumber} email={email} />;
 }

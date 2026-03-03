@@ -21,8 +21,8 @@ import { CartStatus, OrderStatus, PaymentMethod, Prisma } from "@prisma/client";
 import { getCartCountCached, refreshCartCookie } from "../helpers";
 import { CACHE_TAG_CART, CACHE_TAG_PRODUCT } from "@/lib/constants";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
-import { getSiteContentByKey } from "@/lib/server/queries/site-content-queries";
 import { getCart } from "@/lib/server/queries/cart-queries";
+import { computeCartShipping } from "@/lib/server/actions/shipping-actions";
 
 // === QUERIES ===
 export async function getCartAction(): Promise<
@@ -361,14 +361,15 @@ export async function initiateCheckout(
       }
     }
 
-    // === STEP 0.5: READ SHIPPING CHARGE FROM SITE CONTENT ===
+    // === STEP 0.5: COMPUTE SHIPPING CHARGE (global + per-product override) ===
     let shippingCharge = 0;
-    const shippingResult = await getSiteContentByKey("shipping_charge");
-    if (shippingResult.success && shippingResult.data) {
-      const parsed = parseFloat(shippingResult.data.value);
-      if (!isNaN(parsed) && parsed > 0) {
-        shippingCharge = parsed;
-      }
+    const cartItemsForShipping = await prisma.cartItem.findMany({
+      where: { cartId },
+      select: { productId: true, unitPrice: true, quantity: true },
+    });
+    if (cartItemsForShipping.length > 0) {
+      const productIds = cartItemsForShipping.map((i) => i.productId);
+      shippingCharge = await computeCartShipping(productIds);
     }
 
     // === STEP 1: CHECK IF ORDER ALREADY EXISTS (outside transaction) ===
@@ -378,6 +379,46 @@ export async function initiateCheckout(
     });
 
     if (existingOrder?.stripeSessionId) {
+      // Check if total has changed (e.g. shipping rate was updated after PI was created)
+      const subtotal = cartItemsForShipping.reduce(
+        (s, i) => s + i.unitPrice.toNumber() * i.quantity,
+        0,
+      );
+      let discountAmt = 0;
+      if (validCoupon) {
+        discountAmt = (subtotal * validCoupon.discountPercent) / 100;
+      }
+      const newTotal = Math.max(subtotal - discountAmt + shippingCharge, 0);
+      const existingTotal = existingOrder.totalPrice.toNumber();
+
+      if (Math.abs(newTotal - existingTotal) > 0.001) {
+        const isMockSession = existingOrder.stripeSessionId.startsWith("mock_");
+
+        if (!isMockSession) {
+          // Real Stripe PI — update amount
+          const piId = existingOrder.stripeSessionId.split("_secret_")[0];
+          await stripe.paymentIntents.update(piId, {
+            amount: Math.round(newTotal * 100),
+          });
+        }
+
+        await prisma.order.update({
+          where: { id: existingOrder.id },
+          data: {
+            totalPrice: new Decimal(newTotal),
+            shippingAmount:
+              shippingCharge > 0 ? new Decimal(shippingCharge) : null,
+            ...(validCoupon
+              ? {
+                  couponCode: validCoupon.code,
+                  discountPercent: validCoupon.discountPercent,
+                  discountAmount: new Decimal(discountAmt),
+                }
+              : {}),
+          },
+        });
+        revalidateTag(CACHE_TAG_CART, "default");
+      }
       return;
     }
 
@@ -519,22 +560,12 @@ export async function initiateCheckout(
       { timeout: 6500 }, // TO DO: IMPROVE PERFORMANCE TO AVOID LONG TRANSACTIONS
     );
 
-    // === STEP 3: CREATE PAYMENT INTENT ===
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(order.totalPrice.toNumber() * 100),
-      currency: AUD_CURRENCY,
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        orderId: order.id,
-        cartId,
-      },
-    });
-
-    // === STEP 4: SAVE PAYMENT INTENT REFERENCE ===
+    // === STEP 3 & 4: SAVE MOCK SESSION REFERENCE (Stripe disabled) ===
+    // TODO: Re-enable Stripe by replacing this block with real paymentIntents.create
     await prisma.order.update({
       where: { id: order.id },
       data: {
-        stripeSessionId: paymentIntent.client_secret,
+        stripeSessionId: `mock_${order.id}`,
       },
     });
 

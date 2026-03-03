@@ -1,12 +1,32 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  LayoutDashboard,
+  Package,
+  Tag,
+  ShoppingCart,
+  FileText,
+  Users,
+  Layers,
+  Users2,
+  MessageSquare,
+  Ticket,
+  PenSquare,
+  ShieldCheck,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Truck,
+} from "lucide-react";
 
 import { adminRoutes } from "@/lib";
 import { AdminNavbarItem } from "./AdminNavbarItem";
-import { CloseIcon, MenuBarIcon } from "@/components/icons";
 import { adminLogout } from "@/lib/server/actions/admin-auth-actions";
 import {
   AdminAlertDialog,
@@ -19,22 +39,35 @@ import {
   AdminAlertDialogAction,
 } from "@/components/admin";
 
+const navItems = [
+  { href: adminRoutes.home, text: "Dashboard", icon: LayoutDashboard },
+  { href: adminRoutes.products, text: "Products", icon: Package },
+  { href: adminRoutes.categories, text: "Categories", icon: Tag },
+  { href: adminRoutes.orders, text: "Orders", icon: ShoppingCart },
+  { href: adminRoutes.blogs, text: "Blog", icon: FileText },
+  { href: adminRoutes.authors, text: "Authors", icon: Users },
+  { href: adminRoutes.collections, text: "Collections", icon: Layers },
+  { href: adminRoutes.team, text: "Team", icon: Users2 },
+  { href: adminRoutes.testimonials, text: "Testimonials", icon: MessageSquare },
+  { href: adminRoutes.coupons, text: "Coupons", icon: Ticket },
+  { href: adminRoutes.shipping, text: "Shipping", icon: Truck },
+  { href: adminRoutes.siteContent, text: "Content", icon: PenSquare },
+  { href: adminRoutes.admins, text: "Admins", icon: ShieldCheck },
+  { href: adminRoutes.settings, text: "Settings", icon: Settings },
+];
+
 export function AdminNavbar() {
-  // === STATE ===
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [isMobileNavigating, startMobileTransition] = useTransition();
 
-  // === HOOKS ===
   const pathName = usePathname();
   const router = useRouter();
 
-  // Derive whether to show loading bar: navigatingTo is set but we haven't arrived yet
   const isNavigating = navigatingTo !== null && navigatingTo !== pathName;
-
-  // === FUNCTIONS ===
   const isActive = (href: string) => pathName === href;
 
   const handleLogout = async () => {
@@ -42,130 +75,177 @@ export function AdminNavbar() {
     await adminLogout();
   };
 
-  // === NAV ITEMS ===
-  const navItems = [
-    { href: adminRoutes.home, text: "Home" },
-    { href: adminRoutes.products, text: "Products" },
-    { href: adminRoutes.categories, text: "Categories" },
-    { href: adminRoutes.orders, text: "Orders" },
-    { href: adminRoutes.blogs, text: "Blog" },
-    { href: adminRoutes.authors, text: "Authors" },
-    { href: adminRoutes.collections, text: "Collections" },
-    { href: adminRoutes.team, text: "Team" },
-    { href: adminRoutes.testimonials, text: "Testimonials" },
-    { href: adminRoutes.coupons, text: "Coupons" },
-    { href: adminRoutes.siteContent, text: "Content" },
-    { href: adminRoutes.admins, text: "Admins" },
-    { href: adminRoutes.settings, text: "Settings" },
-  ];
-
   return (
     <>
-      <nav className="sticky top-0 left-0 w-full bg-white z-50 h-16 flex items-center px-5 md:px-10 xl:px-12">
-        {/* Top loading bar */}
+      {/* â”€â”€ DESKTOP SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <aside
+        className={`hidden md:flex flex-col h-screen sticky top-0 bg-white border-r border-gray-100 transition-[width] duration-300 ease-in-out overflow-hidden shrink-0 ${
+          collapsed ? "w-[64px]" : "w-[220px]"
+        }`}
+      >
+        {/* Header: brand + collapse toggle */}
+        <div
+          className={`flex items-center border-b border-gray-100 h-14 shrink-0 ${
+            collapsed ? "justify-between px-2" : "px-4 gap-3"
+          }`}
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white text-xs font-bold">
+            S
+          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-gray-900 truncate leading-tight">Saaj Tradition</p>
+              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider leading-tight">Admin</p>
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="cursor-pointer p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors shrink-0"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+          </button>
+        </div>
+
+        {/* Loading bar */}
         {(isNavigating || isMobileNavigating) && (
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-neutral-02 overflow-hidden z-[60]">
-            <div className="h-full bg-black animate-[loading-bar_1.5s_ease-in-out_infinite] w-1/3" />
+          <div className="h-0.5 bg-gray-100 overflow-hidden shrink-0">
+            <div className="h-full bg-gray-800 animate-[loading-bar_1.5s_ease-in-out_infinite] w-1/3" />
           </div>
         )}
 
-        {/* Left Branding */}
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-lg md:text-xl text-black">
-            Saaj Tradition
-          </span>
-          <span className="text-xs md:text-sm font-medium text-neutral-10 px-1.5 md:px-2 py-0.5 md:py-1 rounded bg-neutral-02">
-            Admin
-          </span>
-        </div>
+        {/* Nav */}
+        <nav className={`flex-1 overflow-y-auto py-3 space-y-0.5 ${collapsed ? "px-2" : "px-3"}`}>
+          {!collapsed && (
+            <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              Menu
+            </p>
+          )}
+          {navItems.map((item) => (
+            <AdminNavbarItem
+              key={item.href}
+              isActive={isActive(item.href)}
+              href={item.href}
+              text={item.text}
+              icon={item.icon}
+              collapsed={collapsed}
+              onNavigating={(href) => setNavigatingTo(href)}
+            />
+          ))}
+        </nav>
 
-        {/* Center Nav Items - Desktop */}
-        <div className="hidden md:flex flex-1 justify-center">
-          <div className="h-11 flex items-center gap-2 rounded-full border border-neutral-02 bg-white/80 backdrop-blur-md shadow-sm px-1">
-            {navItems.map((item) => (
-              <AdminNavbarItem
-                key={item.href}
-                isActive={isActive(item.href)}
-                href={item.href}
-                text={item.text}
-                onNavigating={(href) => setNavigatingTo(href)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Right Side - Logout + Mobile Toggle */}
-        <div className="ml-auto flex items-center gap-2">
+        {/* Logout */}
+        <div className={`border-t border-gray-100 py-3 shrink-0 ${collapsed ? "px-2" : "px-3"}`}>
           <button
             type="button"
             onClick={() => setShowLogoutDialog(true)}
-            className="hidden md:inline-flex cursor-pointer text-sm font-medium text-neutral-10 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+            title={collapsed ? "Logout" : undefined}
+            className={`cursor-pointer flex items-center rounded-xl text-sm font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all ${
+              collapsed ? "w-full justify-center p-2.5" : "w-full gap-3 px-3 py-2.5"
+            }`}
           >
-            Logout
-          </button>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="cursor-pointer md:hidden p-2 hover:bg-neutral-02 rounded-lg transition-colors"
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <CloseIcon /> : <MenuBarIcon />}
+            <LogOut size={15} className="shrink-0" />
+            {!collapsed && <span>Logout</span>}
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+      {/* â”€â”€ MOBILE TOPBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-white/90 backdrop-blur-md border-b border-gray-100 flex items-center px-4 gap-3">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="cursor-pointer p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="flex items-center gap-2 flex-1">
+          <div className="h-6 w-6 rounded-md bg-gray-900 text-white text-xs font-bold flex items-center justify-center">
+            S
+          </div>
+          <p className="font-semibold text-sm text-gray-900">Saaj Tradition</p>
+        </div>
+      </div>
 
-      {/* Mobile Menu */}
+      {/* â”€â”€ MOBILE OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div
-        className={`fixed top-16 right-0 w-64 bg-white shadow-lg z-40 md:hidden transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        onClick={() => setMobileOpen(false)}
+        className={`fixed inset-0 bg-black/40 z-50 md:hidden transition-opacity duration-300 ${
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      />
+
+      {/* â”€â”€ MOBILE DRAWER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div
+        className={`fixed top-0 left-0 h-full w-72 bg-white z-50 flex flex-col md:hidden transition-transform duration-300 ease-in-out ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex flex-col p-4 gap-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={(e) => {
-                if (!isActive(item.href)) {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-                  startMobileTransition(() => {
-                    router.push(item.href);
-                  });
-                } else {
-                  setMobileMenuOpen(false);
-                }
-              }}
-              className={`px-4 py-3 rounded-lg font-medium text-base transition-all flex items-center gap-2 ${
-                isActive(item.href)
-                  ? "bg-black text-white"
-                  : "text-neutral-11 hover:bg-neutral-02"
-              }`}
-            >
-              {item.text}
-            </Link>
-          ))}
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 h-14 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-gray-900 text-white text-xs font-bold flex items-center justify-center shrink-0">
+              S
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-gray-900 leading-tight">Saaj Tradition</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 leading-tight">Admin</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="cursor-pointer p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400"
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+          <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Menu</p>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={(e) => {
+                  if (!isActive(item.href)) {
+                    e.preventDefault();
+                    setMobileOpen(false);
+                    startMobileTransition(() => router.push(item.href));
+                  } else {
+                    setMobileOpen(false);
+                  }
+                }}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isActive(item.href)
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                <Icon size={15} className="shrink-0" />
+                <span className="flex-1">{item.text}</span>
+                {isActive(item.href) && <span className="h-1.5 w-1.5 rounded-full bg-white/50 shrink-0" />}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Logout */}
+        <div className="px-3 py-3 border-t border-gray-100 shrink-0">
           <button
             type="button"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              setShowLogoutDialog(true);
-            }}
-            className="w-full cursor-pointer text-left px-4 py-3 rounded-lg font-medium text-base text-red-600 hover:bg-red-50 transition-all"
+            onClick={() => { setMobileOpen(false); setShowLogoutDialog(true); }}
+            className="w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
           >
-            Logout
+            <LogOut size={15} className="shrink-0" />
+            <span>Logout</span>
           </button>
         </div>
       </div>
 
-      {/* Logout Confirmation Dialog */}
+      {/* â”€â”€ LOGOUT DIALOG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AdminAlertDialog
         open={showLogoutDialog}
         onOpenChange={(open) => !isLoggingOut && setShowLogoutDialog(open)}

@@ -43,6 +43,8 @@ export const adminRoutes = {
   coupons: "/admin/coupons",
   couponsCreate: "/admin/coupons/create",
 
+  shipping: "/admin/shipping",
+
   admins: "/admin/admins",
   settings: "/admin/settings",
 };

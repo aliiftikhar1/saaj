@@ -18,7 +18,7 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
         items: [],
         summary: {
           subtotal: "$0.00",
-          shipping: "Calculated at checkout",
+          shipping: "Free",
           total: "$0.00",
           itemCount: 0,
         },
@@ -38,32 +38,40 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
         items: [],
         summary: {
           subtotal: "$0.00",
-          shipping: "Calculated at checkout",
+          shipping: "Free",
           total: "$0.00",
           itemCount: 0,
         },
       };
     }
 
-    const cartItems = await prisma.cartItem.findMany({
-      where: { cartId: existingCartId },
-      include: {
-        size: {
-          select: {
-            id: true,
-            label: true,
+    const [cartItems, globalRateRecord] = await Promise.all([
+      prisma.cartItem.findMany({
+        where: { cartId: existingCartId },
+        include: {
+          size: {
+            select: {
+              id: true,
+              label: true,
+            },
+          },
+          product: {
+            select: {
+              slug: true,
+              shippingCharge: true,
+            },
           },
         },
-        product: {
-          select: {
-            slug: true,
-          },
+        orderBy: {
+          createdAt: "desc",
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+      }),
+      prisma.siteContent.findUnique({ where: { key: "shipping_charge" } }),
+    ]);
+
+    const globalRate = globalRateRecord
+      ? (parseFloat(globalRateRecord.value) || 0)
+      : 0;
 
     const items: CartItemWithDetails[] = cartItems.map((item) => ({
       id: item.id,
@@ -78,7 +86,7 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
       slug: item.product.slug,
     }));
 
-    // Calculate total
+    // Calculate subtotal
     const subtotalDecimal = items.reduce((sum, item) => {
       const itemTotal = item.unitPrice * item.quantity;
       return sum + itemTotal;
@@ -86,10 +94,26 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
 
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
+    // === SHIPPING CALCULATION ===
+    // Each product uses its own charge if set, otherwise the global rate.
+    // The cart shipping = highest applicable rate across all items.
+    let shippingAmount = 0;
+    if (cartItems.length > 0) {
+      const effectiveRates = cartItems.map((item) =>
+        item.product.shippingCharge !== null
+          ? Number(item.product.shippingCharge)
+          : globalRate,
+      );
+      shippingAmount = Math.max(...effectiveRates);
+    }
+
+    const shippingDisplay =
+      shippingAmount > 0 ? `$${shippingAmount.toFixed(2)}` : "Free";
+
     const summary: CartSummary = {
       subtotal: `$${subtotalDecimal.toFixed(2)}`,
-      shipping: "Calculated at checkout",
-      total: `$${subtotalDecimal.toFixed(2)}`,
+      shipping: shippingDisplay,
+      total: `$${(subtotalDecimal + shippingAmount).toFixed(2)}`,
       itemCount,
     };
 
@@ -99,3 +123,4 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
     };
   });
 }
+

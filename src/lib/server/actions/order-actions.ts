@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Order, OrderStatus, PaymentStatus } from "@prisma/client";
+import { Order, OrderStatus, PaymentStatus, CartStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { ServerActionResponse } from "@/types/server";
@@ -84,6 +84,37 @@ export async function updateOrderDetails(
     revalidatePath(adminRoutes.orders);
 
     return orderId;
+  });
+}
+
+/** Mark an order as paid + cart as ORDERED (used when Stripe is bypassed) */
+export async function markOrderAsPaid(
+  orderId: string,
+): Promise<ServerActionResponse<void>> {
+  return wrapServerCall(async () => {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { cartId: true, status: true },
+    });
+
+    if (!order) throw new Error("Order not found");
+
+    await Promise.all([
+      prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: OrderStatus.PROCESSING,
+          paymentStatus: PaymentStatus.PAID,
+          updatedAt: new Date(),
+        },
+      }),
+      prisma.cart.update({
+        where: { id: order.cartId },
+        data: { status: CartStatus.ORDERED },
+      }),
+    ]);
+
+    revalidatePath(adminRoutes.orders);
   });
 }
 

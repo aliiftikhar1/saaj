@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import imageCompression from "browser-image-compression";
+import Image from "next/image";
 
 import {
   AdminButton,
@@ -23,6 +25,7 @@ import {
   deleteCategoryById,
   updateCategoryById,
 } from "@/lib/server/actions";
+import { usePreviewUrl } from "@/hooks";
 
 type AdminCategoriesFormProps = {
   isEditMode?: boolean;
@@ -32,12 +35,17 @@ type AdminCategoriesFormProps = {
 export function AdminCategoriesForm(props: AdminCategoriesFormProps) {
   const { isEditMode = false, categoryData } = props;
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isActionLocked, setIsActionLocked] = useState(false);
+
+  const preview = usePreviewUrl(file);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<AdminCategoryFormData>({
     resolver: zodResolver(AdminCategoryFormSchema),
@@ -48,6 +56,35 @@ export function AdminCategoriesForm(props: AdminCategoriesFormProps) {
       imageUrl: categoryData?.imageUrl ?? "",
     },
   });
+
+  const clearFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    if (!selectedFile) {
+      toast.error("No file selected");
+      return;
+    }
+    const compressedFile = await imageCompression(selectedFile, {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1200,
+      useWebWorker: true,
+    });
+    if (compressedFile.size > 1 * 1024 * 1024) {
+      toast.error("Error compressing image. Please choose a smaller file.");
+      clearFileInput();
+      return;
+    }
+    if (!["image/jpeg", "image/png"].includes(compressedFile.type)) {
+      toast.error("Only JPEG and PNG formats are accepted");
+      clearFileInput();
+      return;
+    }
+    setValue("image", compressedFile, { shouldValidate: true });
+    setFile(compressedFile);
+  };
 
   const onSubmit = async (data: AdminCategoryFormData) => {
     setIsActionLocked(true);
@@ -127,15 +164,60 @@ export function AdminCategoriesForm(props: AdminCategoriesFormProps) {
                 />
                 <AdminFieldError errors={[errors.tagline]} />
               </AdminField>
+
+              {/* IMAGE */}
+              <AdminField>
+                <AdminFieldLabel htmlFor="image">
+                  Category Image (optional)
+                </AdminFieldLabel>
+                <AdminInput
+                  id="image"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handleFileChange}
+                />
+                <AdminFieldError errors={[errors.image]} />
+                {(preview || categoryData?.imageUrl) && (
+                  <div className="relative w-60 h-40 mt-2">
+                    <Image
+                      src={preview || categoryData?.imageUrl || ""}
+                      alt="Preview"
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 100vw, 240px"
+                      className="rounded object-cover"
+                    />
+                  </div>
+                )}
+              </AdminField>
+
               <AdminField>
                 <AdminFieldLabel htmlFor="imageUrl">
-                  Image URL (optional)
+                  Or paste an Image URL (optional)
                 </AdminFieldLabel>
                 <AdminInput
                   id="imageUrl"
                   {...register("imageUrl")}
-                  placeholder="/assets/category-dresses.jpg"
+                  placeholder="https://example.com/image.jpg"
+                  disabled={!!file}
                 />
+                {file && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    URL field disabled while a file is selected.{" "}
+                    <button
+                      type="button"
+                      className="underline cursor-pointer"
+                      onClick={() => {
+                        setFile(null);
+                        setValue("image", undefined);
+                        clearFileInput();
+                      }}
+                    >
+                      Clear file
+                    </button>
+                  </p>
+                )}
                 <AdminFieldError errors={[errors.imageUrl]} />
               </AdminField>
             </AdminFieldGroup>

@@ -53,7 +53,7 @@ export default async function ProductPage(props: ProductPageProps) {
       <main>
         <section className="pb-16 md:pb-25 px-5 md:px-0 w-100 md:w-75 xl:w-60">
           <BreadCrumb
-            items={[{ label: BLOG_NAVBAR_TEXT, href: routes.blog }]}
+            items={[{ label: SHOP_NAVBAR_TEXT, href: routes.shop }]}
           />
         </section>
       </main>

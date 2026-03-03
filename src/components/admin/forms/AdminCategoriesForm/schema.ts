@@ -11,6 +11,14 @@ export const AdminCategoryFormSchema = z.object({
     ),
   tagline: z.string().optional(),
   imageUrl: z.string().optional(),
+  image: z
+    .instanceof(Blob)
+    .refine((file) => file.size <= 1 * 1024 * 1024, "Max file size is 1MB")
+    .refine(
+      (file) => ["image/jpeg", "image/png"].includes(file.type),
+      "Only JPEG and PNG formats are accepted",
+    )
+    .optional(),
 });
 
 export type AdminCategoryFormData = z.output<typeof AdminCategoryFormSchema>;

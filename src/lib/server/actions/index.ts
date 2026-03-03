@@ -11,3 +11,4 @@ export * from "./testimonial-actions";
 export * from "./coupon-actions";
 export * from "./admin-auth-actions";
 export * from "./newsletter-actions";
+export * from "./shipping-actions";

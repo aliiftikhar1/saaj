@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { Decimal } from "@prisma/client/runtime/library";
 
 import { BaseSection } from "@/components";
 import { getCart } from "@/lib/server/queries/cart-queries";
 import { CheckoutCartSidebar } from "@/components";
 import { getCurrentOrder } from "@/lib/server/actions";
 import { CheckoutForm } from "@/components/common/CheckoutForm/CheckoutForm";
+import { computeCartShipping } from "@/lib/server/actions/shipping-actions";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -31,34 +34,60 @@ export default async function CheckoutPage() {
 
   // === PREPARE DATA ===
   const { items, summary } = cartResult.data;
-  const { id: orderId, stripeSessionId } = orderResult.data;
+  const order = orderResult.data;
+  const { id: orderId } = order;;
+
+  // === RECONCILE SHIPPING ===
+  // getCart() already computes the latest shipping from DB.
+  // But the order (and its Stripe PI) may be stale if admin changed
+  // the shipping rate after the order was created. Reconcile here.
+  const productIds = items.map((item) => item.productId);
+  const latestShipping =
+    productIds.length > 0 ? await computeCartShipping(productIds) : 0;
+
+  const subtotalNum = parseFloat(summary.subtotal.replace(/[^0-9.]/g, ""));
+  const discountAmt = order.discountAmount ? Number(order.discountAmount) : 0;
+  const expectedTotal = Math.max(subtotalNum - discountAmt + latestShipping, 0);
+  const currentOrderTotal = Number(order.totalPrice);
+
+  if (Math.abs(expectedTotal - currentOrderTotal) > 0.001) {
+    try {
+      // Persist updated shipping/total on the order record
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          shippingAmount:
+            latestShipping > 0 ? new Decimal(latestShipping) : null,
+          totalPrice: new Decimal(expectedTotal),
+        },
+      });
+    } catch (e) {
+      console.error("Failed to reconcile shipping on checkout:", e);
+    }
+  }
+
+  // === Use reconciled values for display ===
+  const shippingAmount = latestShipping;
+  const orderTotal = Math.abs(expectedTotal - currentOrderTotal) > 0.001
+    ? expectedTotal
+    : currentOrderTotal;
 
   // === COUPON DISCOUNT INFO ===
-  const order = orderResult.data;
   let discount: { code: string; percent: number; amount: string } | null = null;
 
   if (order.couponCode && order.discountPercent && order.discountAmount) {
-    const discountAmt = Number(order.discountAmount);
     discount = {
       code: order.couponCode,
       percent: order.discountPercent,
       amount: `$${discountAmt.toFixed(2)}`,
     };
-    // Recalculate discounted total from subtotal
-    const subtotalNum = parseFloat(summary.subtotal.replace(/[^0-9.]/g, ""));
-    summary.discountedTotal = `$${(subtotalNum - discountAmt).toFixed(2)}`;
-  }
-
-  // === SHIPPING INFO ===
-  const shippingAmount = order.shippingAmount ? Number(order.shippingAmount) : 0;
-
-  // === TOTAL (from order — includes discount + shipping, matches Stripe charge) ===
-  const orderTotal = Number(order.totalPrice);
-  summary.total = `$${orderTotal.toFixed(2)}`;
-  // If discount is applied, discountedTotal is not needed separately — total already reflects it
-  if (discount) {
     summary.discountedTotal = `$${orderTotal.toFixed(2)}`;
   }
+
+  // === SHIPPING & TOTAL DISPLAY ===
+  summary.shipping =
+    shippingAmount > 0 ? `$${shippingAmount.toFixed(2)}` : "Free";
+  summary.total = `$${orderTotal.toFixed(2)}`;
 
   return (
     <main>
@@ -72,20 +101,29 @@ export default async function CheckoutPage() {
           <div className="flex flex-col md:flex-row gap-8 md:gap-12">
             {/* Cart shown above on mobile only */}
             <div className="md:hidden">
-              <CheckoutCartSidebar items={items} summary={summary} discount={discount} shippingAmount={shippingAmount} />
+              <CheckoutCartSidebar
+                items={items}
+                summary={summary}
+                discount={discount}
+                shippingAmount={shippingAmount}
+              />
             </div>
 
             {/* Form */}
             <div className="w-full md:w-[60%]">
               <CheckoutForm
                 orderId={orderId}
-                stripeSessionId={stripeSessionId}
               />
             </div>
 
             {/* Cart sidebar on desktop */}
             <div className="hidden md:block w-full md:w-[40%]">
-              <CheckoutCartSidebar items={items} summary={summary} discount={discount} shippingAmount={shippingAmount} />
+              <CheckoutCartSidebar
+                items={items}
+                summary={summary}
+                discount={discount}
+                shippingAmount={shippingAmount}
+              />
             </div>
           </div>
         </div>

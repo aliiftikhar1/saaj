@@ -39,6 +39,7 @@ model Product {
   sizeType       SizeTypeEnum?
   sizes          Size[]
   collections    Collection[]
+  shippingCharge Decimal?            @db.Decimal(10, 2)
 
   @@index([categoryId])
 }

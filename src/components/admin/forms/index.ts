@@ -7,3 +7,4 @@ export * from "./AdminTeamForm";
 export * from "./AdminSiteContentForm";
 export * from "./AdminTestimonialsForm";
 export * from "./AdminCouponsForm";
+export * from "./AdminShippingForm";

@@ -3,6 +3,7 @@ export const BLOB_STORAGE_PREFIXES = {
   BLOGS: "blogs/",
   PRODUCTS: "products/",
   COLLECTIONS: "collections/",
+  CATEGORIES: "categories/",
   TEAM: "team/",
   TESTIMONIALS: "testimonials/",
 };

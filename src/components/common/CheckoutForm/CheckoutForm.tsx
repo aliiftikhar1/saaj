@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 
 import { CheckoutStep } from "@/types/client";
 import { DeliveryDetailsData } from "./schema";
@@ -17,11 +15,79 @@ type CheckoutFormComponentProps = {
   children: React.ReactNode;
   header: string;
   completed: boolean;
+  stepNumber: number;
+  isActive: boolean;
 };
+
+const STEPS = [
+  { id: "1", label: "Delivery" },
+  { id: "2", label: "Payment" },
+  { id: "3", label: "Review" },
+];
+
+function StepperBar({ currentStep }: { currentStep: number }) {
+  return (
+    <div className="flex items-center mb-8">
+      {STEPS.map((step, idx) => {
+        const num = idx + 1;
+        const isCompleted = currentStep > num;
+        const isActive = currentStep === num;
+        return (
+          <div key={step.id} className="flex items-center flex-1 last:flex-none">
+            {/* Circle */}
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors",
+                  isCompleted
+                    ? "bg-neutral-11 border-neutral-11 text-white"
+                    : isActive
+                      ? "border-neutral-11 text-neutral-11 bg-white"
+                      : "border-neutral-5 text-neutral-7 bg-white",
+                )}
+              >
+                {isCompleted ? (
+                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M3 8l3.5 3.5L13 5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  num
+                )}
+              </div>
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  isCompleted || isActive ? "text-neutral-11" : "text-neutral-7",
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+            {/* Connector line */}
+            {idx < STEPS.length - 1 && (
+              <div
+                className={cn(
+                  "flex-1 h-0.5 mx-2 mb-5 transition-colors",
+                  currentStep > num ? "bg-neutral-11" : "bg-neutral-5",
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function CheckoutFormComponent(props: CheckoutFormComponentProps) {
   // === PROPS ===
-  const { children, header, completed, id } = props;
+  const { children, header, completed, id, isActive } = props;
 
   return (
     <div
@@ -33,7 +99,14 @@ function CheckoutFormComponent(props: CheckoutFormComponentProps) {
       )}
     >
       <div className={"flex items-center justify-between mb-4"}>
-        <h2 className="text-2xl font-medium text-neutral-12 ">{header}</h2>
+        <h2
+          className={cn(
+            "text-2xl font-medium",
+            isActive ? "text-neutral-12" : "text-neutral-8",
+          )}
+        >
+          {header}
+        </h2>
         {completed && <CircleCheckIcon />}
       </div>
       {children}
@@ -43,23 +116,17 @@ function CheckoutFormComponent(props: CheckoutFormComponentProps) {
 
 type CheckoutFormProps = {
   orderId: string;
-  stripeSessionId: string;
 };
 
 export function CheckoutForm(props: CheckoutFormProps) {
   // === PROPS ===
-  const { orderId, stripeSessionId } = props;
+  const { orderId } = props;
 
   // === STATE ===
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(1);
 
   const [deliveryData, setDeliveryData] = useState<DeliveryDetailsData | null>(
     null,
-  );
-
-  // === STRIPE HOOKS ===
-  const stripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
   );
 
   // === FUNCTIONS ===
@@ -100,53 +167,56 @@ export function CheckoutForm(props: CheckoutFormProps) {
 
   return (
     <div>
-      <Elements
-        stripe={stripePromise}
-        options={{ clientSecret: stripeSessionId }}
+      {/* Step progress indicator */}
+      <StepperBar currentStep={currentStep} />
+
+      {/* Delivery Details Step */}
+      <CheckoutFormComponent
+        id="1"
+        header="Delivery Details"
+        completed={currentStep !== 1}
+        stepNumber={1}
+        isActive={currentStep === 1}
       >
-        {/* Delivery Details Step */}
-        <CheckoutFormComponent
-          id="1"
-          header="Delivery Details"
+        <DeliveryDetailsStep
           completed={currentStep !== 1}
-        >
-          <DeliveryDetailsStep
-            completed={currentStep !== 1}
-            onEditDelivery={handleEditDelivery}
-            onContinueToPayment={handleConfirmDelivery}
+          onEditDelivery={handleEditDelivery}
+          onContinueToPayment={handleConfirmDelivery}
+        />
+      </CheckoutFormComponent>
+
+      {/* Payment Step */}
+      <CheckoutFormComponent
+        id="2"
+        header="Payment"
+        completed={currentStep > 2}
+        stepNumber={2}
+        isActive={currentStep === 2}
+      >
+        <div className={currentStep > 1 ? "block" : "hidden"}>
+          <PaymentStep
+            completed={currentStep > 2}
+            onContinue={handleConfirmPayment}
+            onEditPaymentRequest={() => setCurrentStep(2)}
           />
-        </CheckoutFormComponent>
+        </div>
+      </CheckoutFormComponent>
 
-        {/* Payment Step */}
-        <CheckoutFormComponent
-          id="2"
-          header="Payment"
-          completed={currentStep > 2}
-        >
-          <div className={currentStep > 1 ? "block" : "hidden"}>
-            <PaymentStep
-              completed={currentStep > 2}
-              onContinue={handleConfirmPayment}
-              onEditPaymentRequest={() => setCurrentStep(2)}
-            />
-          </div>
-        </CheckoutFormComponent>
-
-        {/* Order Summary Step */}
-        <CheckoutFormComponent
-          id="3"
-          header="Order Summary"
-          completed={currentStep > 3}
-        >
-          <div className={currentStep === 3 ? "block" : "hidden"}>
-            <OrderSummaryStep
-              stripeSessionId={stripeSessionId}
-              deliveryData={deliveryData}
-              orderId={orderId}
-            />
-          </div>
-        </CheckoutFormComponent>
-      </Elements>
+      {/* Order Summary Step */}
+      <CheckoutFormComponent
+        id="3"
+        header="Review & Place Order"
+        completed={currentStep > 3}
+        stepNumber={3}
+        isActive={currentStep === 3}
+      >
+        <div className={currentStep === 3 ? "block" : "hidden"}>
+          <OrderSummaryStep
+            deliveryData={deliveryData}
+            orderId={orderId}
+          />
+        </div>
+      </CheckoutFormComponent>
     </div>
   );
 }
