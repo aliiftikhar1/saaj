@@ -44,12 +44,14 @@ const baseArgs = {
     name: "Mock Product",
     description: "A great product for testing.",
     price: 49.99,
+    compareAtPrice: null,
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     images: ["/assets/clothes-model.jpg"],
     slug: "mock-product",
-    category: "DRESSES",
+    categoryId: null,
+    category: { name: "Dresses", slug: "dresses" },
     sizeType: "Standard",
     sizes: [
       {

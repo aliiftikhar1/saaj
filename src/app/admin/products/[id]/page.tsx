@@ -1,6 +1,7 @@
 import { AdminHeading, AdminProductsForm } from "@/components/admin";
 import type { Metadata } from "next";
 import { getProductById, getCollections, getAllCategories } from "@/lib/server/queries";
+import type { SizeTypeEnum } from "@/types/client";
 
 type AdminProductPageProps = { params: { id: string } };
 
@@ -47,6 +48,7 @@ export default async function Page({ params }: AdminProductPageProps) {
   const productData = {
     ...product.data,
     compareAtPrice: product.data.compareAtPrice ?? undefined,
+    sizeType: product.data.sizeType as SizeTypeEnum | null,
     collectionIds: product.data.collections.map((c) => c.id),
   };
 

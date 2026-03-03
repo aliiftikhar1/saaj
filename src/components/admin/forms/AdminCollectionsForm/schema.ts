@@ -4,7 +4,7 @@ const baseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   tagline: z.string().min(1, "Tagline is required"),
   slug: z.string().min(1, "Slug is required"),
-  sortOrder: z.coerce.number().int().min(0, "Sort order must be >= 0"),
+  sortOrder: z.number().int().min(0, "Sort order must be >= 0"),
 });
 
 export const AdminCollectionsFormSchema = (isEditMode: boolean) =>

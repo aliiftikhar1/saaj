@@ -23,8 +23,13 @@ export function CouponInput({ appliedCoupon }: CouponInputProps) {
     const result = await applyCouponCode(trimmed);
     setIsLoading(false);
 
-    if (!result.success || !result.data?.valid) {
-      toast.error(result.data?.message || "Invalid coupon code");
+    if (!result.success) {
+      toast.error(result.error || "Invalid coupon code");
+      return;
+    }
+
+    if (!result.data.valid) {
+      toast.error(result.data.message || "Invalid coupon code");
       return;
     }
 

@@ -120,7 +120,7 @@ export function AdminCouponsForm(props: AdminCouponsFormProps) {
                   type="number"
                   min={1}
                   max={100}
-                  {...register("discountPercent")}
+                  {...register("discountPercent", { valueAsNumber: true })}
                 />
                 <AdminFieldError errors={[errors.discountPercent]} />
               </AdminField>
@@ -132,7 +132,7 @@ export function AdminCouponsForm(props: AdminCouponsFormProps) {
                   id="maxUses"
                   type="number"
                   min={0}
-                  {...register("maxUses")}
+                  {...register("maxUses", { valueAsNumber: true })}
                 />
                 <AdminFieldError errors={[errors.maxUses]} />
               </AdminField>

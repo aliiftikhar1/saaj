@@ -3,9 +3,9 @@ import { z } from "zod";
 const baseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   text: z.string().min(1, "Review text is required"),
-  rating: z.coerce.number().int().min(1).max(5),
+  rating: z.number().int().min(1).max(5),
   isActive: z.boolean(),
-  sortOrder: z.coerce.number().int().min(0, "Sort order must be >= 0"),
+  sortOrder: z.number().int().min(0, "Sort order must be >= 0"),
 });
 
 export const AdminTestimonialsFormSchema = (isEditMode: boolean) =>

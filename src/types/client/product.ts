@@ -26,7 +26,9 @@ export type ProductGetAllCounts = {
   id: string;
   name: string;
   description: string;
-  price: number; // Converted from Decimal  compareAtPrice: number | null;  isActive: boolean;
+  price: number; // Converted from Decimal
+  compareAtPrice: number | null;
+  isActive: boolean;
   isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -43,7 +45,9 @@ export type ProductWithSizes = {
   id: string;
   name: string;
   description: string;
-  price: number; // Converted from Decimal  compareAtPrice: number | null;  isActive: boolean;
+  price: number; // Converted from Decimal
+  compareAtPrice: number | null;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
   images: string[];

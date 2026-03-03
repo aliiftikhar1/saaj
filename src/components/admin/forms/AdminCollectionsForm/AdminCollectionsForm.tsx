@@ -180,7 +180,7 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
                 <AdminInput
                   id="sortOrder"
                   type="number"
-                  {...register("sortOrder")}
+                  {...register("sortOrder", { valueAsNumber: true })}
                 />
                 <AdminFieldError errors={[errors.sortOrder]} />
               </AdminField>

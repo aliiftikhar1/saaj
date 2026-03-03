@@ -95,8 +95,12 @@ export async function applyCouponCode(
   return wrapServerCall(async () => {
     const result = await validateCouponCode(code);
 
-    if (!result.success || !result.data?.valid) {
-      return result.data || { valid: false, message: "Invalid coupon code" };
+    if (!result.success) {
+      return { valid: false, discountPercent: 0, code: "", message: "Invalid coupon code" };
+    }
+
+    if (!result.data.valid) {
+      return result.data;
     }
 
     const cookieStore = await cookies();

@@ -3,7 +3,7 @@ import { z } from "zod";
 const baseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   position: z.string().min(1, "Position is required"),
-  sortOrder: z.coerce.number().int().min(0, "Sort order must be >= 0"),
+  sortOrder: z.number().int().min(0, "Sort order must be >= 0"),
 });
 
 export const AdminTeamFormSchema = (isEditMode: boolean) =>

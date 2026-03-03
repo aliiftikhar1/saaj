@@ -5,12 +5,12 @@ export const AdminCouponFormSchema = z.object({
     .string()
     .min(1, "Code is required")
     .regex(/^[A-Za-z0-9_-]+$/, "Code must be alphanumeric"),
-  discountPercent: z.coerce
+  discountPercent: z
     .number()
     .int()
     .min(1, "Discount must be at least 1%")
     .max(100, "Discount cannot exceed 100%"),
-  maxUses: z.coerce.number().int().min(0).optional(),
+  maxUses: z.number().int().min(0).optional(),
   isActive: z.boolean(),
   expiresAt: z.string().optional(),
 });

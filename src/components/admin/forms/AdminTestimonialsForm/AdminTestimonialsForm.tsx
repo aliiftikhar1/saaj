@@ -172,7 +172,7 @@ export function AdminTestimonialsForm(props: AdminTestimonialsFormProps) {
                   type="number"
                   min={1}
                   max={5}
-                  {...register("rating")}
+                  {...register("rating", { valueAsNumber: true })}
                 />
                 <AdminFieldError errors={[errors.rating]} />
               </AdminField>
@@ -192,7 +192,7 @@ export function AdminTestimonialsForm(props: AdminTestimonialsFormProps) {
                 <AdminInput
                   id="sortOrder"
                   type="number"
-                  {...register("sortOrder")}
+                  {...register("sortOrder", { valueAsNumber: true })}
                 />
                 <AdminFieldError errors={[errors.sortOrder]} />
               </AdminField>
