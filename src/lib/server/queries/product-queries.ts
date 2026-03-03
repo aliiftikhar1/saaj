@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 
-import { OrderStatus, Product } from "@prisma/client";
+import { OrderStatus } from "@prisma/client";
 import { ServerActionResponse } from "@/types/server";
 import {
   ProductDashboardStats,

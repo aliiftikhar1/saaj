@@ -14,7 +14,6 @@ import {
   AdminDropdownMenuItem,
   AdminDropdownMenuLabel,
   AdminDropdownMenuCheckboxItem,
-  AdminDropdownMenuSeparator,
   AdminInput,
   AdminSelect,
   AdminSelectContent,

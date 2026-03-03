@@ -32,7 +32,6 @@ import {
   adminRoutes,
   cn,
   formatDateToYYYYMMDD,
-  screamingSnakeToTitle,
 } from "@/lib";
 import { productColumns, defaultVisibleProductColumnIds } from "./columns";
 import { ProductGetAllCounts } from "@/types/client";

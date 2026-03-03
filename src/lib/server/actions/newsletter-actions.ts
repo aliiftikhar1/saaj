@@ -1,7 +1,5 @@
 "use server";
 
-import { ServerActionResponse } from "@/types/server";
-import { wrapServerCall } from "../helpers/generic-helpers";
 import { STORE_EMAIL } from "@/lib/constants";
 
 export async function subscribeToNewsletter(

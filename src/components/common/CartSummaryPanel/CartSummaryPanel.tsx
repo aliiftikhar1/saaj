@@ -20,6 +20,7 @@ export async function CartSummaryPanel(props: CartSummaryPanelProps) {
 
   let appliedCoupon: { code: string; discountPercent: number } | null = null;
   let discount: { code: string; percent: number; amount: string } | null = null;
+  let discountedTotalValue: string | undefined = undefined;
 
   if (couponCode) {
     const validation = await validateCouponCode(couponCode);
@@ -36,13 +37,17 @@ export async function CartSummaryPanel(props: CartSummaryPanelProps) {
         percent,
         amount: `$${discountAmount.toFixed(2)}`,
       };
-      summary.discountedTotal = `$${discountedTotal.toFixed(2)}`;
+      discountedTotalValue = `$${discountedTotal.toFixed(2)}`;
     }
   }
 
+  const resolvedSummary: CartSummary = discountedTotalValue
+    ? { ...summary, discountedTotal: discountedTotalValue }
+    : summary;
+
   return (
     <CartSummaryPanelUI
-      summary={summary}
+      summary={resolvedSummary}
       checkoutButton={<CheckoutButton className="w-full" />}
       couponInput={<CouponInput appliedCoupon={appliedCoupon} />}
       discount={discount}
