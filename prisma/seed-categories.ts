@@ -45,15 +45,6 @@ const CATEGORIES = [
   },
 ];
 
-// Map old enum values to new category slugs
-const ENUM_TO_SLUG: Record<string, string> = {
-  DRESSES: "dresses",
-  OUTERWEAR: "outerwear",
-  TOPS_BOTTOMS: "tops-bottoms",
-  BAGS_ACCESSORIES: "bags-accessories",
-  SHOES: "shoes",
-};
-
 async function main() {
   console.log("Seeding categories...");
 

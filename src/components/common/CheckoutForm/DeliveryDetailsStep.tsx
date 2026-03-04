@@ -50,6 +50,7 @@ export function DeliveryDetailsStep(props: DeliveryDetailsStepProps) {
   });
 
   // === WATCHER ===
+  // eslint-disable-next-line react-hooks/incompatible-library
   const deliveryData = completed ? watch() : null;
   const billingSameAsDelivery = watch("useSameBillingAddress");
 

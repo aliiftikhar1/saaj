@@ -24,7 +24,7 @@ import {
 import { adminRoutes, formatDateToYYYYMMDD } from "@/lib";
 import { orderColumns, defaultVisibleOrderColumnIds } from "./columns";
 import { OrderWithCart } from "@/types/client";
-import { updateOrderStatus, updatePaymentStatus } from "@/lib/server/actions/order-actions";
+import { updateOrderStatus } from "@/lib/server/actions/order-actions";
 
 const ORDER_STATUSES = [
   "PENDING",
@@ -35,8 +35,6 @@ const ORDER_STATUSES = [
   "CANCELLED",
   "REFUNDED",
 ] as const;
-
-const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
 
 type AdminOrdersTableProps = {
   orders: OrderWithCart[];
@@ -65,22 +63,6 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
       toast.success(`Order status updated to ${newStatus}`);
     } else {
       toast.error("Failed to update order status");
-    }
-  };
-
-  const handlePaymentStatusChange = async (orderId: string, newStatus: string) => {
-    const result = await updatePaymentStatus(orderId, newStatus);
-    if (result.success) {
-      setOrdersState((prev) =>
-        prev.map((o) =>
-          o.id === orderId
-            ? { ...o, paymentStatus: result.data.paymentStatus as OrderWithCart["paymentStatus"] }
-            : o,
-        ),
-      );
-      toast.success(`Payment status updated to ${newStatus}`);
-    } else {
-      toast.error("Failed to update payment status");
     }
   };
 
