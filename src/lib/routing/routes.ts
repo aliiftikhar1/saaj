@@ -37,6 +37,8 @@ export const adminRoutes = {
 
   siteContent: "/admin/site-content",
 
+  marquee: "/admin/marquee",
+
   testimonials: "/admin/testimonials",
   testimonialsCreate: "/admin/testimonials/create",
 

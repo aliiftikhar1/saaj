@@ -23,6 +23,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Truck,
+  Megaphone,
 } from "lucide-react";
 
 import { adminRoutes } from "@/lib";
@@ -51,6 +52,7 @@ const navItems = [
   { href: adminRoutes.testimonials, text: "Testimonials", icon: MessageSquare },
   { href: adminRoutes.coupons, text: "Coupons", icon: Ticket },
   { href: adminRoutes.shipping, text: "Shipping", icon: Truck },
+  { href: adminRoutes.marquee, text: "Marquee", icon: Megaphone },
   { href: adminRoutes.siteContent, text: "Content", icon: PenSquare },
   { href: adminRoutes.admins, text: "Admins", icon: ShieldCheck },
   { href: adminRoutes.settings, text: "Settings", icon: Settings },

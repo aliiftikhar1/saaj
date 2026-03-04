@@ -12,6 +12,7 @@ export type SerializedProduct = {
   price: number;
   compareAtPrice: number | null;
   isActive: boolean;
+  isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
   images: string[];

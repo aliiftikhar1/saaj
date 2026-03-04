@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState, useTransition, useRef, useEffect } from "react";
+import { Search, X, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { cn } from "@/lib";
 
 type ShopFilterBarProps = {
   totalProducts: number;
@@ -21,16 +23,17 @@ export function ShopFilterBar({ totalProducts }: ShopFilterBarProps) {
   const [search, setSearch] = useState(currentSearch);
   const [minPrice, setMinPrice] = useState(currentMinPrice);
   const [maxPrice, setMaxPrice] = useState(currentMaxPrice);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
       const params = new URLSearchParams(searchParams.toString());
       Object.entries(updates).forEach(([key, value]) => {
-        if (value) {
-          params.set(key, value);
-        } else {
-          params.delete(key);
-        }
+        if (value) params.set(key, value);
+        else params.delete(key);
       });
       startTransition(() => {
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -39,12 +42,24 @@ export function ShopFilterBar({ totalProducts }: ShopFilterBarProps) {
     [router, pathname, searchParams],
   );
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateParams({ q: search });
-  };
+  // Live search: debounce 350ms after each keystroke
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      // Read current URL at fire-time to avoid stale closure on searchParams
+      const params = new URLSearchParams(window.location.search);
+      if (search) params.set("q", search);
+      else params.delete("q");
+      startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      });
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search, pathname, router]);
 
-  const handlePriceFilter = () => {
+  const handlePriceApply = () => {
     updateParams({ minPrice, maxPrice });
   };
 
@@ -56,116 +71,138 @@ export function ShopFilterBar({ totalProducts }: ShopFilterBarProps) {
     setSearch("");
     setMinPrice("");
     setMaxPrice("");
-    startTransition(() => {
-      router.push(pathname, { scroll: false });
-    });
+    startTransition(() => router.push(pathname, { scroll: false }));
   };
 
-  const hasActiveFilters = currentSearch || currentMinPrice || currentMaxPrice || currentSort;
+  const hasActiveFilters =
+    currentSearch || currentMinPrice || currentMaxPrice || currentSort;
 
   return (
-    <div className="w-full space-y-4 mb-6">
-      {/* Search Bar */}
-      <form onSubmit={handleSearchSubmit} className="flex gap-2">
+    <div className="w-full mb-6 flex flex-col gap-2">
+      {/* Row 1: Search + Sort */}
+      <div className="flex items-center gap-2">
+        {/* Live Search */}
         <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-08"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+          {isPending && search !== "" ? (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border border-neutral-04 border-t-neutral-09 animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-07 pointer-events-none" />
+          )}
           <input
+            ref={searchInputRef}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm border border-neutral-04 rounded-sm focus:outline-none focus:border-black transition-colors"
+            className="w-full pl-8.5 pr-8 py-2 text-sm border border-neutral-04 rounded-sm bg-white focus:outline-none focus:border-neutral-09 transition-colors placeholder:text-neutral-06"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => { setSearch(""); searchInputRef.current?.focus(); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-06 hover:text-neutral-10 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2.5 text-sm font-medium bg-black text-white rounded-sm hover:bg-neutral-800 transition-colors disabled:opacity-50 cursor-pointer"
-        >
-          Search
-        </button>
-      </form>
 
-      {/* Filters Row */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Price Range */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-08 font-medium">Price:</span>
+        {/* Price filter toggle (mobile: icon button) */}
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-2 text-xs border rounded-sm transition-colors cursor-pointer shrink-0",
+            showFilters || currentMinPrice || currentMaxPrice
+              ? "border-neutral-09 bg-neutral-09 text-white"
+              : "border-neutral-04 text-neutral-08 hover:border-neutral-09 hover:text-neutral-10 bg-white",
+          )}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Price</span>
+          {(currentMinPrice || currentMaxPrice) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80 sm:hidden" />
+          )}
+        </button>
+
+        {/* Sort */}
+        <div className="relative shrink-0">
+          <select
+            value={currentSort}
+            onChange={(e) => handleSortChange(e.target.value)}
+            className="appearance-none pl-3 pr-7 py-2 text-xs border border-neutral-04 rounded-sm bg-white focus:outline-none focus:border-neutral-09 transition-colors cursor-pointer text-neutral-08 hover:text-neutral-10"
+          >
+            <option value="">Sort</option>
+            <option value="price-asc">Price ↑</option>
+            <option value="price-desc">Price ↓</option>
+            <option value="name-asc">A → Z</option>
+            <option value="name-desc">Z → A</option>
+            <option value="newest">Newest</option>
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-07 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Row 2: Price filter (collapsible) */}
+      {showFilters && (
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-neutral-01 border border-neutral-03 rounded-sm">
+          <span className="text-xs text-neutral-07 font-medium shrink-0">Price</span>
           <input
             type="number"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handlePriceApply()}
             placeholder="Min"
             min="0"
-            step="0.01"
-            className="w-20 px-2 py-1.5 text-sm border border-neutral-04 rounded-sm focus:outline-none focus:border-black"
+            step="1"
+            className="w-20 px-2 py-1 text-xs border border-neutral-04 rounded-sm bg-white focus:outline-none focus:border-neutral-09"
           />
-          <span className="text-neutral-08">—</span>
+          <span className="text-neutral-05 text-xs">—</span>
           <input
             type="number"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handlePriceApply()}
             placeholder="Max"
             min="0"
-            step="0.01"
-            className="w-20 px-2 py-1.5 text-sm border border-neutral-04 rounded-sm focus:outline-none focus:border-black"
+            step="1"
+            className="w-20 px-2 py-1 text-xs border border-neutral-04 rounded-sm bg-white focus:outline-none focus:border-neutral-09"
           />
           <button
             type="button"
-            onClick={handlePriceFilter}
+            onClick={handlePriceApply}
             disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium bg-neutral-02 hover:bg-neutral-03 rounded-sm transition-colors cursor-pointer disabled:opacity-50"
+            className="px-3 py-1 text-xs font-medium bg-neutral-09 text-white rounded-sm hover:bg-neutral-11 transition-colors disabled:opacity-50 cursor-pointer"
           >
-            Go
+            Apply
           </button>
         </div>
+      )}
 
-        {/* Sort */}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs text-neutral-08 font-medium">Sort:</span>
-          <select
-            value={currentSort}
-            onChange={(e) => handleSortChange(e.target.value)}
-            className="px-2 py-1.5 text-sm border border-neutral-04 rounded-sm focus:outline-none focus:border-black bg-white cursor-pointer"
-          >
-            <option value="">Default</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="name-asc">Name: A to Z</option>
-            <option value="name-desc">Name: Z to A</option>
-            <option value="newest">Newest First</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Active Filters & Count */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-neutral-08">
-          {totalProducts} {totalProducts === 1 ? "product" : "products"}
-          {isPending && " (loading...)"}
+      {/* Row 3: Count + clear */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-neutral-07">
+          {isPending ? (
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full border border-neutral-05 border-t-neutral-09 animate-spin inline-block" />
+              Loading...
+            </span>
+          ) : (
+            `${totalProducts} ${totalProducts === 1 ? "product" : "products"}`
+          )}
         </span>
         {hasActiveFilters && (
           <button
             type="button"
             onClick={handleClearAll}
-            className="text-xs text-red-600 hover:text-red-800 font-medium cursor-pointer transition-colors"
+            className="flex items-center gap-1 text-xs text-neutral-07 hover:text-neutral-10 transition-colors cursor-pointer"
           >
-            Clear all filters
+            <X className="w-3 h-3" />
+            Clear filters
           </button>
         )}
       </div>
     </div>
   );
 }
+

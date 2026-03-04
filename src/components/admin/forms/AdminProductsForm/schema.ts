@@ -38,6 +38,8 @@ export const AdminProductsFormSchema = (isEditMode: boolean) =>
 
       isActive: z.boolean(),
 
+      isFeatured: z.boolean().optional().default(false),
+
       sizeType: SizeTypeEnum.optional().refine((val) => val !== undefined, {
         message: "Size is required",
       }),

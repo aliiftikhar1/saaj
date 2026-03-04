@@ -8,3 +8,4 @@ export * from "./AdminSiteContentForm";
 export * from "./AdminTestimonialsForm";
 export * from "./AdminCouponsForm";
 export * from "./AdminShippingForm";
+export * from "./AdminMarqueeForm";

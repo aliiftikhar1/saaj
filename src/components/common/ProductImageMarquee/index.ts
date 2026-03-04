@@ -1,0 +1,1 @@
+export { ProductImageMarquee } from "./ProductImageMarquee";

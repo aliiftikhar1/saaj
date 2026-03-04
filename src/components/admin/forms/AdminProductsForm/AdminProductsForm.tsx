@@ -53,6 +53,7 @@ type ProductFormData = {
   price: number;
   compareAtPrice?: number | null;
   isActive: boolean;
+  isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
   images: string[];
@@ -109,6 +110,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
       sizeType:
         isEditMode && productData?.sizeType ? productData?.sizeType : undefined,
       isActive: productData?.isActive ?? true,
+      isFeatured: productData?.isFeatured ?? false,
       imageUrls: productData?.images || [],
       collectionIds: productData?.collectionIds || [],
     },
@@ -118,6 +120,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
   const categoryValue = watch("category");
   const sizeTypeValue = watch("sizeType");
   const isActiveValue = watch("isActive");
+  const isFeaturedValue = watch("isFeatured");
   const imageUrlsValue = watch("imageUrls");
   const collectionIdsValue = watch("collectionIds") || [];
 
@@ -548,12 +551,11 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               <AdminFieldLabel htmlFor="productSizes">Sizes</AdminFieldLabel>
               {isEditMode && (
                 <AdminFieldDescription>
-                  Size is not editable
+                  Changing the size type will delete all existing sizes and recreate them with default stock.
                 </AdminFieldDescription>
               )}
               <AdminSelect
                 value={sizeTypeValue ?? ""}
-                disabled={isEditMode}
                 onValueChange={(val) =>
                   setValue("sizeType", val as SizeTypeEnum, {
                     shouldValidate: true,
@@ -575,6 +577,30 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
                 </AdminSelectContent>
               </AdminSelect>
               <AdminFieldError errors={[errors.sizeType]} />
+            </AdminField>
+
+            {/* NEW ARRIVALS (isFeatured) */}
+            <AdminField>
+              <AdminFieldLabel>New Arrivals</AdminFieldLabel>
+              <AdminFieldDescription>
+                Show this product in the New Arrivals section on the home page.
+              </AdminFieldDescription>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isFeaturedValue}
+                onClick={() => setValue("isFeatured", !isFeaturedValue)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 shrink-0 ${
+                  isFeaturedValue ? "bg-neutral-900" : "bg-neutral-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    isFeaturedValue ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <AdminFieldError errors={[errors.isFeatured]} />
             </AdminField>
 
             {/* IS ACTIVE */}

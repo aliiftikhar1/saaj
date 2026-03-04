@@ -68,6 +68,45 @@ export async function getFeaturedProducts(): Promise<
   });
 }
 
+// Marquee products — by specific IDs or latest 12 active products as fallback
+export async function getMarqueeProducts(
+  ids: string[],
+): Promise<ServerActionResponse<SerializedProduct[]>> {
+  return wrapServerCall(async () => {
+    if (ids.length > 0) {
+      const products = await prisma.product.findMany({
+        where: { id: { in: ids }, isActive: true },
+      });
+      // Preserve admin-defined order
+      const map = new Map(products.map((p) => [p.id, p]));
+      return ids
+        .map((id) => map.get(id))
+        .filter((p): p is NonNullable<typeof p> => p !== undefined)
+        .map(serializeProduct);
+    }
+    // Fallback: latest 12 active products
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    });
+    return products.map(serializeProduct);
+  });
+}
+
+// Minimal product list for admin pickers
+export async function getAllProductsBasic(): Promise<
+  ServerActionResponse<{ id: string; name: string; images: string[] }[]>
+> {
+  return wrapServerCall(() =>
+    prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, images: true },
+    }),
+  );
+}
+
 const getThreeRandomProductsCache = unstable_cache(
   async (currentSlug: string) => {
     const products = await prisma.product.findMany({
@@ -127,7 +166,8 @@ const getAllProductsWithTotalSoldCached = unstable_cache(
       }, 0);
 
       // Destructure to exclude cartItems (contains Decimal fields) from client payload
-      const { cartItems, category, ...productWithoutCartItems } = product;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { cartItems: _cartItems, category, ...productWithoutCartItems } = product;
 
       return {
         ...serializeProduct(productWithoutCartItems),

@@ -202,6 +202,70 @@ const SITE_CONTENT_DEFAULTS: SiteContentDefault[] = [
     label: "Shipping Charge (e.g. 10.00, set 0 for free shipping)",
     group: "shipping",
   },
+  // === Announcement Marquee ===
+  {
+    key: "announcement_active",
+    value: "true",
+    label: "Active (true / false)",
+    group: "announcement-marquee",
+  },
+  {
+    key: "announcement_bg_color",
+    value: "#1c1917",
+    label: "Background Color",
+    group: "announcement-marquee",
+  },
+  {
+    key: "announcement_text_color",
+    value: "#f5f5f4",
+    label: "Text Color",
+    group: "announcement-marquee",
+  },
+  {
+    key: "announcement_separator_color",
+    value: "#78716c",
+    label: "Separator / Divider Color",
+    group: "announcement-marquee",
+  },
+  {
+    key: "announcement_texts",
+    value:
+      "Free Worldwide Shipping on orders over Rs.2000\nNew Spring Collection Has Arrived\nSustainably Crafted Luxury\nSign up for 15% off your first order",
+    label: "Announcement Lines (one per line)",
+    group: "announcement-marquee",
+  },
+  // === Product Marquee ===
+  {
+    key: "product_marquee_active",
+    value: "true",
+    label: "Active (true / false)",
+    group: "product-marquee",
+  },
+  {
+    key: "marquee_product_ids",
+    value: "",
+    label: "Product IDs (comma-separated, empty = latest 12 active products)",
+    group: "product-marquee",
+  },
+  // === Partner Logos Marquee ===
+  {
+    key: "partners_marquee_active",
+    value: "true",
+    label: "Active (true / false)",
+    group: "partner-logos-marquee",
+  },
+  {
+    key: "partners_heading",
+    value: "Our Partners",
+    label: "Section Heading",
+    group: "partner-logos-marquee",
+  },
+  {
+    key: "partners_logos",
+    value: "LVMH\nKERING\nRICHEMONT\nCAPRI\nTAPESTRY\nPRADA GROUP",
+    label: "Partner Names (one per line)",
+    group: "partner-logos-marquee",
+  },
 ];
 
 export async function seedSiteContentDefaults() {

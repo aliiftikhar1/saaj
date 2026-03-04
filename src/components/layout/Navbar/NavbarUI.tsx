@@ -26,6 +26,7 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [lastPathName, setLastPathName] = useState("");
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   const pathName = usePathname();
   const navItems: NavItemType[] = getNavItems(collections);
@@ -42,6 +43,7 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
   // Close mobile menu on route change (derived state pattern)
   if (pathName !== lastPathName) {
     setLastPathName(pathName);
+    setPendingHref(null);
     if (showMobileMenu) {
       setShowMobileMenu(false);
       setActiveSubMenu(null);
@@ -133,14 +135,18 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
                 <Link
                   key={item.id}
                   href={item.href}
+                  onClick={() => setPendingHref(item.href)}
                   className={cn(
-                    "px-3.5 py-1.5 text-[13px] tracking-[-0.01em] rounded-full transition-colors duration-200",
+                    "px-3.5 py-1.5 text-[13px] tracking-[-0.01em] rounded-full transition-colors duration-200 flex items-center gap-1.5",
                     isActive(item.href)
                       ? "text-neutral-12 font-medium"
                       : "text-neutral-09 hover:text-neutral-12 font-normal",
                   )}
                 >
                   {item.text}
+                  {pendingHref === item.href && (
+                    <span className="w-2.5 h-2.5 rounded-full border border-current border-t-transparent animate-spin opacity-50 shrink-0" />
+                  )}
                 </Link>
               );
             })}

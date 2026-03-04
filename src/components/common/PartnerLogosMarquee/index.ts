@@ -1,0 +1,1 @@
+export { PartnerLogosMarquee } from "./PartnerLogosMarquee";

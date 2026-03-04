@@ -1,6 +1,10 @@
+"use client";
+
 import { routes } from "@/lib";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 
 type ProductTileProps = {
   id: string;
@@ -26,6 +30,8 @@ export function ProductTile(props: ProductTileProps) {
     slug = "",
   } = props;
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const isOnSale = compareAtPrice != null && compareAtPrice > price;
   const discountPercent = isOnSale
     ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
@@ -36,6 +42,7 @@ export function ProductTile(props: ProductTileProps) {
       id={id}
       href={slug ? `${routes.product}/${slug}` : `${routes.product}/${id}`}
       className="group flex flex-col w-full"
+      onClick={() => setIsLoading(true)}
     >
       {/* Image Container */}
       <div className="relative aspect-[5/6] overflow-hidden bg-neutral-02 rounded-sm">
@@ -64,6 +71,26 @@ export function ProductTile(props: ProductTileProps) {
           sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
           className="object-cover w-full h-full transition-opacity duration-500 ease-in-out opacity-0 group-hover:opacity-100"
         />
+
+        {/* Hover "View" circular button */}
+        <div className="absolute inset-0 flex items-end justify-end p-2.5 pointer-events-none">
+          <div
+            className={`
+              flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-md
+              transition-all duration-300 ease-out
+              opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0
+            `}
+          >
+            <ArrowUpRight className="w-4 h-4 text-neutral-900" strokeWidth={2} />
+          </div>
+        </div>
+
+        {/* Click loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-[2px]">
+            <div className="w-6 h-6 rounded-full border-2 border-neutral-300 border-t-neutral-900 animate-spin" />
+          </div>
+        )}
       </div>
 
       {/* Info */}

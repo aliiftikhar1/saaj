@@ -16,6 +16,10 @@ import {
   BlogLargeTile,
   BlogTile,
   getButtonStyles,
+  AnnouncementMarquee,
+  ProductImageMarquee,
+  PartnerLogosMarquee,
+  ViewAllProductsButton,
 } from "@/components";
 import { HomeVideoSectionWrapper } from "@/components/common/HomeVideoSection/HomeVideoSectionClient";
 import { routes, screamingSnakeToTitle } from "@/lib";
@@ -25,7 +29,9 @@ import {
   getCollections,
   getSiteContentMap,
   getActiveTestimonials,
+  getMarqueeProducts,
 } from "@/lib/server/queries";
+import { seedSiteContentDefaults } from "@/app/admin/site-content/seed";
 
 export const metadata: Metadata = {
   title: {
@@ -34,6 +40,9 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
+  // Ensure all site content defaults (including marquee) exist in DB
+  await seedSiteContentDefaults();
+
   // === QUERIES ===
   const products = await getFeaturedProducts();
   const productsList = products.success ? products.data : [];
@@ -60,8 +69,46 @@ export default async function HomePage() {
     reviewerImageUrl: t.imageSrc || "",
   }));
 
+  // === MARQUEE DATA ===
+  // Default to active when DB key is absent (first run before seed completes)
+  const announcementActive = c.announcement_active !== "false";
+  const productMarqueeActive = c.product_marquee_active !== "false";
+  const partnersMarqueeActive = c.partners_marquee_active !== "false";
+
+  const announcementTexts = (c.announcement_texts ?? "Free Worldwide Shipping on orders over Rs.2000\nNew Spring Collection Has Arrived\nSustainably Crafted Luxury\nSign up for 15% off your first order")
+    .split("\n")
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+
+  const partnerLogos = (c.partners_logos ?? "LVMH\nKERING\nRICHEMONT\nCAPRI\nTAPESTRY\nPRADA GROUP")
+    .split("\n")
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+
+  const marqueeIds = (c.marquee_product_ids ?? "")
+    .split(",")
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+  const marqueeProductsRes = await getMarqueeProducts(marqueeIds);
+  const marqueeProducts = (marqueeProductsRes.success ? marqueeProductsRes.data : []).map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    price: Number(p.price),
+    compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
+    primaryImageUrl: p.images[0] ?? "",
+  }));
+
   return (
     <main>
+      {/* Announcement Marquee — home page only, after navbar */}
+      <AnnouncementMarquee
+        isActive={announcementActive}
+        bgColor={c.announcement_bg_color ?? "#1c1917"}
+        textColor={c.announcement_text_color ?? "#f5f5f4"}
+        separatorColor={c.announcement_separator_color ?? "#78716c"}
+        texts={announcementTexts}
+      />
       <HeroSection
         heading={c.hero_heading}
         subheading={c.hero_subheading}
@@ -74,15 +121,7 @@ export default async function HomePage() {
               heading={c.new_arrivals_heading || "New Arrivals"}
               subheading={c.new_arrivals_subheading || "Fresh Selections"}
             />
-            <Link
-              className={getButtonStyles(
-                "light",
-                "ms-auto h-fit hidden md:block",
-              )}
-              href={routes.shop}
-            >
-              {"View all products"}
-            </Link>
+            <ViewAllProductsButton className="ms-auto h-fit hidden md:block" />
           </div>
 
           <AnimateFadeIn className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -100,11 +139,7 @@ export default async function HomePage() {
             ))}
           </AnimateFadeIn>
 
-          <Button
-            className="w-full md:hidden"
-            variant="light"
-            text={"View all products"}
-          />
+          <ViewAllProductsButton className="w-full md:hidden" />
         </div>
       </BaseSection>
 
@@ -155,6 +190,19 @@ export default async function HomePage() {
           ))}
         </div>
       </BaseSection>
+
+      {/* Product Image Marquee — after collections */}
+      <ProductImageMarquee
+        isActive={productMarqueeActive}
+        products={marqueeProducts}
+      />
+
+      {/* Partner Logos Marquee */}
+      <PartnerLogosMarquee
+        isActive={partnersMarqueeActive}
+        heading={c.partners_heading ?? "Our Partners"}
+        logos={partnerLogos}
+      />
 
       <div className="relative bg-main-01">
         <ReviewCardsSection reviews={testimonials} />

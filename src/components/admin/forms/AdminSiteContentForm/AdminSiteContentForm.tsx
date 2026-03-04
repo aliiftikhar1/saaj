@@ -18,6 +18,72 @@ type AdminSiteContentFormProps = {
   items: SiteContentItem[];
 };
 
+/** Render a colour swatch + hex text input */
+function ColorField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="color"
+        value={value || "#000000"}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-12 cursor-pointer rounded border border-neutral-200 p-0.5 bg-white"
+        aria-label="Pick colour"
+      />
+      <AdminInput
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex-1 font-mono"
+        placeholder="#000000"
+      />
+    </div>
+  );
+}
+
+/** Render an on/off toggle for "true"/"false" string values */
+function ActiveToggle({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isOn = value === "true";
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <button
+        type="button"
+        id={id}
+        role="switch"
+        aria-checked={isOn}
+        onClick={() => onChange(isOn ? "false" : "true")}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 ${
+          isOn ? "bg-neutral-900" : "bg-neutral-300"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            isOn ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
+      <span className="text-sm text-neutral-600 select-none">
+        {isOn ? "Active" : "Inactive"}
+      </span>
+    </div>
+  );
+}
+
 export function AdminSiteContentForm({ items }: AdminSiteContentFormProps) {
   const [values, setValues] = useState<Record<string, string>>(
     items.reduce(
@@ -61,6 +127,9 @@ export function AdminSiteContentForm({ items }: AdminSiteContentFormProps) {
     setIsSaving(false);
   };
 
+  const handleChange = (id: string, v: string) =>
+    setValues((prev) => ({ ...prev, [id]: v }));
+
   return (
     <div className="w-full max-w-2xl">
       <form
@@ -78,37 +147,50 @@ export function AdminSiteContentForm({ items }: AdminSiteContentFormProps) {
             <AdminFieldGroup>
               <AdminFieldSet>
                 <AdminFieldGroup>
-                  {groupItems.map((item) => (
-                    <AdminField key={item.id}>
-                      <AdminFieldLabel htmlFor={item.key}>
-                        {item.label}
-                      </AdminFieldLabel>
-                      {item.value.length > 80 ? (
-                        <textarea
-                          id={item.key}
-                          className="flex w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 min-h-[80px]"
-                          value={values[item.id] ?? ""}
-                          onChange={(e) =>
-                            setValues((prev) => ({
-                              ...prev,
-                              [item.id]: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <AdminInput
-                          id={item.key}
-                          value={values[item.id] ?? ""}
-                          onChange={(e) =>
-                            setValues((prev) => ({
-                              ...prev,
-                              [item.id]: e.target.value,
-                            }))
-                          }
-                        />
-                      )}
-                    </AdminField>
-                  ))}
+                  {groupItems.map((item) => {
+                    const isActive = item.key.endsWith("_active");
+                    const isColor = item.key.endsWith("_color");
+                    const isLong = (values[item.id] ?? "").length > 80;
+
+                    return (
+                      <AdminField key={item.id}>
+                        <AdminFieldLabel htmlFor={item.key}>
+                          {item.label}
+                        </AdminFieldLabel>
+
+                        {isActive ? (
+                          <ActiveToggle
+                            id={item.key}
+                            value={values[item.id] ?? "false"}
+                            onChange={(v) => handleChange(item.id, v)}
+                          />
+                        ) : isColor ? (
+                          <ColorField
+                            id={item.key}
+                            value={values[item.id] ?? "#000000"}
+                            onChange={(v) => handleChange(item.id, v)}
+                          />
+                        ) : isLong ? (
+                          <textarea
+                            id={item.key}
+                            className="flex w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 min-h-[80px]"
+                            value={values[item.id] ?? ""}
+                            onChange={(e) =>
+                              handleChange(item.id, e.target.value)
+                            }
+                          />
+                        ) : (
+                          <AdminInput
+                            id={item.key}
+                            value={values[item.id] ?? ""}
+                            onChange={(e) =>
+                              handleChange(item.id, e.target.value)
+                            }
+                          />
+                        )}
+                      </AdminField>
+                    );
+                  })}
                 </AdminFieldGroup>
               </AdminFieldSet>
             </AdminFieldGroup>

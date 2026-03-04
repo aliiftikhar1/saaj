@@ -41,6 +41,7 @@ export async function createProduct(
         categoryId: data.category || null,
         slug: data.slug,
         isActive: data.isActive,
+        isFeatured: data.isFeatured ?? false,
         images: data.imageUrls,
         sizeType: data.sizeType,
 
@@ -70,6 +71,12 @@ export async function updateProductById(
       return { id };
     }
 
+    // Check if sizeType has changed so we can recreate sizes
+    const current = data.sizeType
+      ? await prisma.product.findUnique({ where: { id }, select: { sizeType: true } })
+      : null;
+    const sizeTypeChanged = current && current.sizeType !== data.sizeType;
+
     const created = await prisma.product.update({
       where: { id },
       data: {
@@ -82,10 +89,23 @@ export async function updateProductById(
         categoryId: data.category || null,
         slug: data.slug,
         isActive: data.isActive,
+        isFeatured: data.isFeatured ?? false,
         images: data.imageUrls,
+        sizeType: data.sizeType,
         collections: {
           set: (data.collectionIds || []).map((cid) => ({ id: cid })),
         },
+        ...(sizeTypeChanged && data.sizeType
+          ? {
+              sizes: {
+                deleteMany: {},
+                create: SIZE_TEMPLATES[data.sizeType].map((label) => ({
+                  label,
+                  stockTotal: 10,
+                })),
+              },
+            }
+          : {}),
       },
     });
 

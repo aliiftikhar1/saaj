@@ -24,3 +24,7 @@ export * from "./CheckoutForm";
 export * from "./CheckoutCartSidebar";
 export * from "./CouponInput";
 export * from "./ShopFilterBar";
+export * from "./AnnouncementMarquee";
+export * from "./ProductImageMarquee";
+export * from "./PartnerLogosMarquee";
+export * from "./ViewAllProductsButton";
