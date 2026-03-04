@@ -8,7 +8,6 @@ import {
   AnimateStagger,
   HeroSection,
   ProductTile,
-  Button,
   FeatureCard,
   CollectionTile,
   ReviewCardsSection,

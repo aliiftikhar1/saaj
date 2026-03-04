@@ -7,7 +7,6 @@ import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/utils/stripe";
 import {
-  AUD_CURRENCY,
   COOKIE_CART_ID,
   MAX_CART_ITEM_QUANTITY,
   MAX_CART_TOTAL_QUANTITY,
