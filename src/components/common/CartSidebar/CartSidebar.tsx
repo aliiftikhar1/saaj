@@ -87,7 +87,7 @@ export function CartSidebar() {
                 Your cart is empty
               </p>
               <p className="text-sm text-neutral-08 mb-6">
-                Looks like you haven't added anything yet.
+                Looks like you haven&apos;t added anything yet.
               </p>
               <Link
                 href={routes.shop}

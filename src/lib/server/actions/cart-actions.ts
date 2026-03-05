@@ -18,7 +18,7 @@ import { ServerActionResponse } from "@/types/server";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { CartStatus, OrderStatus, PaymentMethod, Prisma } from "@prisma/client";
 import { getCartCountCached, refreshCartCookie } from "../helpers";
-import { CACHE_TAG_CART, CACHE_TAG_PRODUCT, PKR_CURRENCY } from "@/lib/constants";
+import { CACHE_TAG_CART, CACHE_TAG_PRODUCT } from "@/lib/constants";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 import { getCart } from "@/lib/server/queries/cart-queries";
 import { computeCartShipping } from "@/lib/server/actions/shipping-actions";
