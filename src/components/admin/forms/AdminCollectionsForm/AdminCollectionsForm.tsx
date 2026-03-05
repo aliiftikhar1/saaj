@@ -62,6 +62,7 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const clearFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
