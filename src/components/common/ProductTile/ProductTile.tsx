@@ -102,15 +102,15 @@ export function ProductTile(props: ProductTileProps) {
           {isOnSale ? (
             <>
               <span className="text-xs sm:text-sm font-medium text-red-600">
-                ${price.toFixed(2)}
+                Rs.{price.toFixed(2)}
               </span>
               <span className="text-[10px] sm:text-xs text-neutral-07 line-through">
-                ${compareAtPrice.toFixed(2)}
+                Rs.{compareAtPrice.toFixed(2)}
               </span>
             </>
           ) : (
             <span className="text-xs sm:text-sm text-neutral-09">
-              ${price.toFixed(2)}
+              Rs.{price.toFixed(2)}
             </span>
           )}
         </div>

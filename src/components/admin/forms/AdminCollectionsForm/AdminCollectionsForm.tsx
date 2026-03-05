@@ -18,6 +18,7 @@ import {
   AdminFieldLabel,
   AdminFieldSet,
   AdminInput,
+  ImageCropDialog,
 } from "@/components/admin";
 import {
   AdminCollectionsFormData,
@@ -43,6 +44,7 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isActionLocked, setIsActionLocked] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   const preview = usePreviewUrl(file);
   const {
@@ -72,23 +74,36 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
       toast.error("No file selected");
       return;
     }
-    const compressedFile = await imageCompression(selectedFile, {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    // Open crop dialog instead of compressing directly
+    setCropSrc(URL.createObjectURL(selectedFile));
+  };
+
+  const handleCropConfirm = async (croppedFile: File) => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    const compressedFile = await imageCompression(croppedFile, {
       maxSizeMB: 0.25,
       maxWidthOrHeight: 800,
       useWebWorker: true,
     });
     if (compressedFile.size > 1 * 1024 * 1024) {
       toast.error("Error compressing image. Please choose a smaller file.");
-      clearFileInput();
+      setCropSrc(null);
       return;
     }
     if (!["image/jpeg", "image/png"].includes(compressedFile.type)) {
       toast.error("Only JPEG and PNG formats are accepted");
-      clearFileInput();
+      setCropSrc(null);
       return;
     }
     setValue("image", compressedFile, { shouldValidate: true });
     setFile(compressedFile);
+    setCropSrc(null);
+  };
+
+  const handleCropClose = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   };
 
   const onAddSubmit = async (data: AdminCollectionsFormData) => {
@@ -197,7 +212,7 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
                 />
                 <AdminFieldError errors={[errors.image]} />
                 {(preview || collectionData?.imageUrl) && (
-                  <div className="relative w-60! h-40 mt-2">
+                  <div className="relative w-60! h-40 mt-2 group">
                     <Image
                       src={preview || collectionData?.imageUrl || ""}
                       alt="Preview"
@@ -206,6 +221,15 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
                       sizes="(max-width: 768px) 100vw, 240px"
                       className="rounded object-cover"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setCropSrc(preview || collectionData?.imageUrl || null)}
+                      className="absolute top-1.5 left-1.5 bg-black/70 hover:bg-black text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1"
+                      aria-label="Re-crop image"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+                      Re-crop
+                    </button>
                   </div>
                 )}
               </AdminField>
@@ -233,6 +257,13 @@ export function AdminCollectionsForm(props: AdminCollectionsFormProps) {
           </AdminFieldSet>
         </AdminFieldGroup>
       </form>
+
+      <ImageCropDialog
+        open={!!cropSrc}
+        imageSrc={cropSrc}
+        onClose={handleCropClose}
+        onCrop={handleCropConfirm}
+      />
     </div>
   );
 }

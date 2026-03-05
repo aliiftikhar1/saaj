@@ -1,0 +1,1 @@
+export { AdminEmailTemplateForm } from "./AdminEmailTemplateForm";

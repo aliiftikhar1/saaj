@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { Mail, Loader2 } from "lucide-react";
 
 import { GetAdminOrder } from "@/types/client";
 import { AdminButton } from "../AdminButton";
@@ -14,6 +15,7 @@ import {
   AdminSelectValue,
 } from "../AdminSelect";
 import { updateOrderStatus, updatePaymentStatus } from "@/lib/server/actions/order-actions";
+import { sendCustomEmailToOrderCustomer } from "@/lib/server/actions/email-actions";
 
 const ORDER_STATUSES = [
   "PENDING",
@@ -38,6 +40,12 @@ export function AdminOrderView(props: AdminOrderViewProps) {
   // === STATE ===
   const [orderStatus, setOrderStatus] = useState(order.status);
   const [paymentStat, setPaymentStat] = useState(order.paymentStatus);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [customSubject, setCustomSubject] = useState("");
+  const [customBody, setCustomBody] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
 
   const handleExportPDF = () => {
     const subtotalVal = order.cart.items.reduce(
@@ -54,8 +62,8 @@ export function AdminOrderView(props: AdminOrderViewProps) {
             <div style="color:#6b7280;font-size:12px;">Size: ${item.size.label}</div>
           </td>
           <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:center;color:#6b7280;">${item.quantity}</td>
-          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:right;color:#6b7280;">$${item.unitPrice.toFixed(2)}</td>
-          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:500;">$${(item.unitPrice * item.quantity).toFixed(2)}</td>
+          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:right;color:#6b7280;">Rs.${item.unitPrice.toFixed(2)}</td>
+          <td style="padding:8px 4px;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:500;">Rs.${(item.unitPrice * item.quantity).toFixed(2)}</td>
         </tr>`,
       )
       .join("");
@@ -85,7 +93,7 @@ export function AdminOrderView(props: AdminOrderViewProps) {
     const couponHtml = order.couponCode
       ? `<tr>
           <td colspan="2" style="padding:4px 0;color:#16a34a;">Coupon (${order.couponCode}${order.discountPercent ? ` — ${order.discountPercent}%` : ""})</td>
-          <td style="padding:4px 0;text-align:right;color:#16a34a;">${order.discountAmount ? `-$${order.discountAmount.toFixed(2)}` : "—"}</td>
+          <td style="padding:4px 0;text-align:right;color:#16a34a;">${order.discountAmount ? `-Rs.${order.discountAmount.toFixed(2)}` : "—"}</td>
         </tr>`
       : "";
 
@@ -138,16 +146,16 @@ export function AdminOrderView(props: AdminOrderViewProps) {
       <tbody>
         <tr>
           <td colspan="2" style="padding:4px 0;color:#6b7280;">Subtotal</td>
-          <td style="padding:4px 0;text-align:right;">$${subtotalVal.toFixed(2)}</td>
+          <td style="padding:4px 0;text-align:right;">Rs.${subtotalVal.toFixed(2)}</td>
         </tr>
         <tr>
           <td colspan="2" style="padding:4px 0;color:#6b7280;">Shipping</td>
-          <td style="padding:4px 0;text-align:right;">${order.shippingAmount === 0 ? "Free" : `$${order.shippingAmount?.toFixed(2) ?? "—"}`}</td>
+          <td style="padding:4px 0;text-align:right;">${order.shippingAmount === 0 ? "Free" : `Rs.${order.shippingAmount?.toFixed(2) ?? "—"}`}</td>
         </tr>
         ${couponHtml}
         <tr style="border-top:2px solid #111;">
           <td colspan="2" style="padding:8px 0 0;font-weight:700;font-size:15px;">Total</td>
-          <td style="padding:8px 0 0;text-align:right;font-weight:700;font-size:18px;">$${order.totalPrice.toFixed(2)}</td>
+          <td style="padding:8px 0 0;text-align:right;font-weight:700;font-size:18px;">Rs.${order.totalPrice.toFixed(2)}</td>
         </tr>
       </tbody>
     </table>
@@ -176,15 +184,39 @@ export function AdminOrderView(props: AdminOrderViewProps) {
     }, 500);
   };
 
-  const handleEmailOrder = () => {
-    console.log("Email order to:", order.deliveryEmail);
+  const handleEmailOrder = async () => {
+    setShowEmailModal(true);
+  };
+
+  const handleSendCustomEmail = async () => {
+    if (!customSubject.trim() || !customBody.trim()) {
+      toast.error("Subject and body are required");
+      return;
+    }
+    setEmailSending(true);
+    try {
+      const result = await sendCustomEmailToOrderCustomer(order.id, customSubject, customBody);
+      if (result.success) {
+        toast.success("Email sent to customer");
+        setShowEmailModal(false);
+        setCustomSubject("");
+        setCustomBody("");
+      } else {
+        toast.error("Failed to send email");
+      }
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   const handleOrderStatusChange = async (newStatus: string) => {
-    const result = await updateOrderStatus(order.id, newStatus);
+    const result = await updateOrderStatus(order.id, newStatus, {
+      sendEmail,
+      customMessage: statusMessage || undefined,
+    });
     if (result.success) {
       setOrderStatus(result.data.status as typeof orderStatus);
-      toast.success(`Order status updated to ${newStatus}`);
+      toast.success(`Order status updated to ${newStatus}${sendEmail && order.deliveryEmail ? " (email sent)" : ""}`);
     } else {
       toast.error("Failed to update order status");
     }
@@ -208,6 +240,63 @@ export function AdminOrderView(props: AdminOrderViewProps) {
 
   return (
     <div className="bg-white rounded-lg border border-neutral-04 p-4 md:p-6 space-y-6">
+      {/* Custom Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-neutral-11 flex items-center gap-2">
+                <Mail size={18} /> Email to Customer
+              </h3>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="cursor-pointer text-neutral-08 hover:text-neutral-11 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-xs text-neutral-08">
+              Sending to: <strong>{order.deliveryEmail}</strong>
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-neutral-10 mb-1">Subject</label>
+              <input
+                type="text"
+                value={customSubject}
+                onChange={(e) => setCustomSubject(e.target.value)}
+                placeholder="e.g. Update on your Saaj Tradition order"
+                className="w-full border border-neutral-04 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-06"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-10 mb-1">
+                Message Body (HTML supported)
+              </label>
+              <textarea
+                value={customBody}
+                onChange={(e) => setCustomBody(e.target.value)}
+                rows={6}
+                placeholder="Write your message here. You can use HTML tags."
+                className="w-full border border-neutral-04 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-06 resize-none font-mono"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <AdminButton variant="outline" onClick={() => setShowEmailModal(false)}>
+                Cancel
+              </AdminButton>
+              <AdminButton
+                onClick={handleSendCustomEmail}
+                disabled={emailSending}
+                className="flex items-center gap-2"
+              >
+                {emailSending && <Loader2 size={14} className="animate-spin" />}
+                {emailSending ? "Sending…" : "Send Email"}
+              </AdminButton>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Actions */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 border-b border-neutral-04 pb-4">
         <div className="flex-1">
@@ -227,51 +316,80 @@ export function AdminOrderView(props: AdminOrderViewProps) {
             variant="default"
             onClick={handleEmailOrder}
             disabled={!order.deliveryEmail}
+            className="flex items-center gap-2"
           >
+            <Mail size={14} />
             Email to Customer
           </AdminButton>
         </div>
       </div>
 
       {/* Order Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="bg-neutral-01 p-4 rounded">
-          <p className="text-sm text-neutral-09 mb-2">Order Status</p>
-          <AdminSelect value={orderStatus} onValueChange={handleOrderStatusChange}>
-            <AdminSelectTrigger className="w-full">
-              <AdminSelectValue />
-            </AdminSelectTrigger>
-            <AdminSelectContent>
-              {ORDER_STATUSES.map((s) => (
-                <AdminSelectItem key={s} value={s}>
-                  {s}
-                </AdminSelectItem>
-              ))}
-            </AdminSelectContent>
-          </AdminSelect>
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-neutral-01 p-4 rounded">
+            <p className="text-sm text-neutral-09 mb-2">Order Status</p>
+            <AdminSelect value={orderStatus} onValueChange={handleOrderStatusChange}>
+              <AdminSelectTrigger className="w-full">
+                <AdminSelectValue />
+              </AdminSelectTrigger>
+              <AdminSelectContent>
+                {ORDER_STATUSES.map((s) => (
+                  <AdminSelectItem key={s} value={s}>
+                    {s}
+                  </AdminSelectItem>
+                ))}
+              </AdminSelectContent>
+            </AdminSelect>
+          </div>
+          <div className="bg-neutral-01 p-4 rounded">
+            <p className="text-sm text-neutral-09 mb-2">Payment Status</p>
+            <AdminSelect value={paymentStat} onValueChange={handlePaymentStatusChange}>
+              <AdminSelectTrigger className="w-full">
+                <AdminSelectValue />
+              </AdminSelectTrigger>
+              <AdminSelectContent>
+                {PAYMENT_STATUSES.map((s) => (
+                  <AdminSelectItem key={s} value={s}>
+                    {s}
+                  </AdminSelectItem>
+                ))}
+              </AdminSelectContent>
+            </AdminSelect>
+          </div>
+          <div className="bg-neutral-01 p-4 rounded">
+            <p className="text-sm text-neutral-09 mb-1">Payment Method</p>
+            <p className="font-semibold text-neutral-11">{order.paymentMethod}</p>
+          </div>
         </div>
-        <div className="bg-neutral-01 p-4 rounded">
-          <p className="text-sm text-neutral-09 mb-2">Payment Status</p>
-          <AdminSelect value={paymentStat} onValueChange={handlePaymentStatusChange}>
-            <AdminSelectTrigger className="w-full">
-              <AdminSelectValue />
-            </AdminSelectTrigger>
-            <AdminSelectContent>
-              {PAYMENT_STATUSES.map((s) => (
-                <AdminSelectItem key={s} value={s}>
-                  {s}
-                </AdminSelectItem>
-              ))}
-            </AdminSelectContent>
-          </AdminSelect>
-        </div>
-        <div className="bg-neutral-01 p-4 rounded">
-          <p className="text-sm text-neutral-09 mb-1">Payment Method</p>
-          <p className="font-semibold text-neutral-11">{order.paymentMethod}</p>
-        </div>
+
+        {/* Email notification row below status grid */}
+        {order.deliveryEmail && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="rounded border-gray-300 accent-blue-600"
+              />
+              <span className="text-sm text-blue-800 font-medium">
+                Notify customer by email when status changes
+              </span>
+            </label>
+            {sendEmail && (
+              <input
+                type="text"
+                value={statusMessage}
+                onChange={(e) => setStatusMessage(e.target.value)}
+                placeholder="Optional personal message for the customer…"
+                className="flex-1 border border-blue-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              />
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Customer Note */}
       {order.orderNote && (
         <div>
           <h3 className="text-base md:text-lg font-semibold text-neutral-11 mb-3">

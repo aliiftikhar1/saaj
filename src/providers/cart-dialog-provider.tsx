@@ -55,7 +55,14 @@ export const CartDialogProvider = ({ children }: { children: ReactNode }) => {
 
 export const useCartDialog = () => {
   const context = useContext(CartContext);
-  if (!context)
-    throw new Error("useCartDialog must be used within CartDialogProvider");
+  if (!context) {
+    // Return a safe no-op during SSR or when used outside the provider
+    return {
+      dialogOpen: false,
+      dialogProduct: null,
+      showDialog: () => {},
+      hideDialog: () => {},
+    } as CartContextType;
+  }
   return context;
 };

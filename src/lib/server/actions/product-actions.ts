@@ -25,9 +25,15 @@ export async function createProduct(
       throw new Error("sizeType is required");
     }
 
-    const sizes = SIZE_TEMPLATES[data.sizeType].map((size) => ({
+    // Use admin-selected sizes; fall back to full template if none specified
+    const sizeLabels =
+      data.selectedSizes?.length
+        ? data.selectedSizes
+        : SIZE_TEMPLATES[data.sizeType];
+
+    const sizes = sizeLabels.map((size) => ({
       label: size,
-      stockTotal: 10, // mock stock value, in real app this would come from form data
+      stockTotal: 10,
     }));
 
     const created = await prisma.product.create({
@@ -56,7 +62,7 @@ export async function createProduct(
     });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "default");
+    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
 
     return { id: created.id };
   });
@@ -99,7 +105,10 @@ export async function updateProductById(
           ? {
               sizes: {
                 deleteMany: {},
-                create: SIZE_TEMPLATES[data.sizeType].map((label) => ({
+                create: (data.selectedSizes?.length
+                  ? data.selectedSizes
+                  : SIZE_TEMPLATES[data.sizeType]
+                ).map((label) => ({
                   label,
                   stockTotal: 10,
                 })),
@@ -110,7 +119,7 @@ export async function updateProductById(
     });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "default");
+    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
 
     return { id: created.id };
   });
@@ -127,7 +136,7 @@ export async function deleteProductById(
     const deleted = await prisma.product.delete({ where: { id } });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "default");
+    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
 
     return { id: deleted.id };
   });
@@ -151,7 +160,7 @@ export async function toggleProductFeatured(
     });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "default");
+    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
 
     return { id: updated.id, isFeatured: updated.isFeatured };
   });

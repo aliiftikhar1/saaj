@@ -1,10 +1,11 @@
 "use server";
 
 import { put } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { TestimonialMutationInput, ServerActionResponse } from "@/types/server";
+import { CACHE_TAG_TESTIMONIAL } from "@/lib/constants/cache-tags";
 import {
   AdminFormAddTestimonialData,
   AdminFormEditTestimonialData,
@@ -24,6 +25,7 @@ export async function deleteTestimonialById(
     const deleted = await prisma.testimonial.delete({ where: { id } });
     revalidatePath(adminRoutes.testimonials);
     revalidatePath(routes.home);
+    revalidateTag(CACHE_TAG_TESTIMONIAL, "unstable_cache");
     return { id: deleted.id };
   });
 }
@@ -63,6 +65,7 @@ export async function createTestimonial(
     });
     revalidatePath(adminRoutes.testimonials);
     revalidatePath(routes.home);
+    revalidateTag(CACHE_TAG_TESTIMONIAL, "unstable_cache");
     return { id: created.id };
   });
 }
@@ -102,6 +105,7 @@ export async function updateTestimonialById(
 
     revalidatePath(adminRoutes.testimonials);
     revalidatePath(routes.home);
+    revalidateTag(CACHE_TAG_TESTIMONIAL, "unstable_cache");
     return { id };
   });
 }

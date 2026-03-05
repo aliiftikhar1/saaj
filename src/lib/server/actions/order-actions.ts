@@ -10,6 +10,7 @@ import { DeliveryDetailsData } from "@/components";
 import { cookies } from "next/headers";
 import { COOKIE_CART_ID } from "@/lib/constants";
 import { adminRoutes } from "@/lib/routing";
+import { sendOrderConfirmationEmails, sendOrderStatusEmail } from "./email-actions";
 
 // === QUERIES ===
 export async function getCurrentOrder(): Promise<
@@ -115,6 +116,11 @@ export async function markOrderAsPaid(
     ]);
 
     revalidatePath(adminRoutes.orders);
+
+    // Send confirmation emails (non-blocking)
+    sendOrderConfirmationEmails(orderId).catch((err) => {
+      console.error("[Email] Failed to send order confirmation after markOrderAsPaid:", err);
+    });
   });
 }
 
@@ -122,6 +128,7 @@ export async function markOrderAsPaid(
 export async function updateOrderStatus(
   orderId: string,
   status: string,
+  options?: { sendEmail?: boolean; customMessage?: string },
 ): Promise<ServerActionResponse<{ id: string; status: string }>> {
   return wrapServerCall(async () => {
     const validStatuses = Object.values(OrderStatus);
@@ -139,6 +146,13 @@ export async function updateOrderStatus(
 
     revalidatePath(adminRoutes.orders);
     revalidatePath(`${adminRoutes.orders}/${orderId}`);
+
+    // Optionally send status update email to customer
+    if (options?.sendEmail && updated.deliveryEmail) {
+      sendOrderStatusEmail(orderId, options.customMessage).catch((err) => {
+        console.error("[Email] Failed to send order status update email:", err);
+      });
+    }
 
     return { id: updated.id, status: updated.status };
   });

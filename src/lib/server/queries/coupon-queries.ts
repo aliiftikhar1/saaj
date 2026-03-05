@@ -1,17 +1,24 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ServerActionResponse, CouponValidationResult } from "@/types/server";
 import { CouponItem } from "@/types/client";
 import { Coupon } from "@prisma/client";
 import { wrapServerCall } from "@/lib/server/helpers";
+import { CACHE_TAG_COUPON } from "@/lib/constants/cache-tags";
+
+const getCouponsCached = unstable_cache(
+  async () =>
+    prisma.coupon.findMany({
+      orderBy: { createdAt: "desc" },
+    }),
+  [CACHE_TAG_COUPON, "all"],
+  { tags: [CACHE_TAG_COUPON] },
+);
 
 export async function getCoupons(): Promise<
   ServerActionResponse<CouponItem[]>
 > {
-  return wrapServerCall(() =>
-    prisma.coupon.findMany({
-      orderBy: { createdAt: "desc" },
-    }),
-  );
+  return wrapServerCall(() => getCouponsCached());
 }
 
 export async function getCouponById(

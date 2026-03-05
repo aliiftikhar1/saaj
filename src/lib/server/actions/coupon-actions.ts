@@ -14,7 +14,7 @@ import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 import { validateCouponCode } from "@/lib/server/queries";
 import { COOKIE_COUPON_CODE } from "@/lib/constants/cookie-variables";
-import { CACHE_TAG_CART } from "@/lib/constants/cache-tags";
+import { CACHE_TAG_CART, CACHE_TAG_COUPON } from "@/lib/constants/cache-tags";
 
 export async function deleteCouponById(
   id: string,
@@ -24,6 +24,7 @@ export async function deleteCouponById(
       return { id };
     }
     const deleted = await prisma.coupon.delete({ where: { id } });
+    revalidateTag(CACHE_TAG_COUPON, "unstable_cache");
     revalidatePath(adminRoutes.coupons);
     return { id: deleted.id };
   });
@@ -45,6 +46,7 @@ export async function createCoupon(
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       },
     });
+    revalidateTag(CACHE_TAG_COUPON, "unstable_cache");
     revalidatePath(adminRoutes.coupons);
     return { id: created.id };
   });
@@ -68,6 +70,7 @@ export async function updateCouponById(
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       },
     });
+    revalidateTag(CACHE_TAG_COUPON, "unstable_cache");
     revalidatePath(adminRoutes.coupons);
     return { id };
   });
@@ -112,7 +115,7 @@ export async function applyCouponCode(
       path: "/",
     });
 
-    revalidateTag(CACHE_TAG_CART, "default");
+    revalidateTag(CACHE_TAG_CART, "unstable_cache");
 
     return result.data;
   });
@@ -124,6 +127,6 @@ export async function removeCouponCode(): Promise<
   return wrapServerCall(async () => {
     const cookieStore = await cookies();
     cookieStore.delete(COOKIE_COUPON_CODE);
-    revalidateTag(CACHE_TAG_CART, "default");
+    revalidateTag(CACHE_TAG_CART, "unstable_cache");
   });
 }

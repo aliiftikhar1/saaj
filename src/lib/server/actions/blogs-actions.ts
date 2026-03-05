@@ -2,13 +2,14 @@
 
 import { BlogCategory } from "@prisma/client";
 import { put } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { BlogMutationInput, ServerActionResponse } from "@/types/server";
 import { getReadingMinutes, wrapServerCall } from "@/lib/server/helpers";
 import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
 import { adminRoutes, routes } from "@/lib/routing";
+import { CACHE_TAG_BLOG } from "@/lib/constants/cache-tags";
 import {
   AdminFormAddBlogsData,
   AdminFormEditBlogsData,
@@ -47,6 +48,7 @@ export async function createBlog(
       },
     });
 
+    revalidateTag(CACHE_TAG_BLOG, "unstable_cache");
     revalidatePath(adminRoutes.blogs);
     revalidatePath(routes.blog);
     revalidatePath(routes.home);
@@ -64,6 +66,7 @@ export async function updateBlogById(
       return { id };
     }
 
+    revalidateTag(CACHE_TAG_BLOG, "unstable_cache");
     revalidatePath(adminRoutes.blogs);
     revalidatePath(routes.blog);
     revalidatePath(routes.home);
@@ -124,6 +127,7 @@ export async function deleteBlogById(
     }
 
     const deleted = await prisma.blogPost.delete({ where: { id } });
+    revalidateTag(CACHE_TAG_BLOG, "unstable_cache");
     revalidatePath(adminRoutes.blogs);
     revalidatePath(routes.blog);
     revalidatePath(routes.home);

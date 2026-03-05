@@ -11,7 +11,11 @@ import {
   TeamMemberCard,
 } from "@/components";
 
-import { aboutImageSrcArray } from "@/lib";
+import {
+  STORE_EMAIL,
+  STORE_INSTAGRAM,
+  STORE_FACEBOOK,
+} from "@/lib/constants/store-information";
 import {
   getTeamMembers,
   getSiteContentMap,
@@ -27,6 +31,19 @@ export default async function AboutPage() {
 
   const contentMapResponse = await getSiteContentMap();
   const c = contentMapResponse.success ? contentMapResponse.data : {};
+
+  const email = c.social_email || STORE_EMAIL;
+  const instagram = c.social_instagram || STORE_INSTAGRAM;
+  const facebook = c.social_facebook || STORE_FACEBOOK;
+
+  // About page images - controllable from admin Site Content
+  const aboutImages = [
+    c.about_image_1 || "/assets/about-us-image-1.jpg",
+    c.about_image_2 || "/assets/about-us-image-2.jpg",
+    c.about_image_3 || "/assets/about-us-image-3.jpg",
+    c.about_image_4 || "/assets/about-us-image-4.jpg",
+  ].filter(Boolean);
+  const aboutFactImage = c.about_fact_image || "/assets/about-us-fact-image.jpg";
 
   const featureCards = [
     {
@@ -76,11 +93,47 @@ export default async function AboutPage() {
             {c.about_subtitle ||
               "Get to know who we are, what we stand for, and why we love what we do."}
           </p>
+          <div className="flex items-center gap-4 mt-4">
+            <a
+              href={`mailto:${email}`}
+              aria-label="Email us"
+              className="text-neutral-400 hover:text-neutral-900 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </a>
+            <a
+              href={instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow us on Instagram"
+              className="text-neutral-400 hover:text-neutral-900 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+              </svg>
+            </a>
+            <a
+              href={facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow us on Facebook"
+              className="text-neutral-400 hover:text-neutral-900 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+              </svg>
+            </a>
+          </div>
         </div>
         <div className="w-full z-10 relative overflow-hidden">
           <div className="flex gap-4 animate-scroll-left-slow">
             {/* First set of images */}
-            {aboutImageSrcArray.map((src, index) => (
+            {aboutImages.map((src, index) => (
               <div
                 className="relative w-62.5 aspect-3/4 lg:w-87.5 lg:aspect-6/7 shrink-0"
                 key={`first-${index}`}
@@ -96,7 +149,7 @@ export default async function AboutPage() {
               </div>
             ))}
             {/* Duplicate set for seamless loop */}
-            {aboutImageSrcArray.map((src, index) => (
+            {aboutImages.map((src, index) => (
               <div
                 className="relative w-62.5 aspect-3/4 lg:w-87.5 lg:aspect-6/7 shrink-0"
                 key={`second-${index}`}
@@ -119,7 +172,7 @@ export default async function AboutPage() {
           <div className="relative aspect-video xl:aspect-auto xl:h-full">
             <Image
               className="object-cover rounded-sm"
-              src="/assets/about-us-fact-image.jpg"
+              src={aboutFactImage}
               priority
               alt={"About us image facts"}
               fill

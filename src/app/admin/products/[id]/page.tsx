@@ -50,6 +50,7 @@ export default async function Page({ params }: AdminProductPageProps) {
     compareAtPrice: product.data.compareAtPrice ?? undefined,
     sizeType: product.data.sizeType as SizeTypeEnum | null,
     collectionIds: product.data.collections.map((c) => c.id),
+    existingSizeLabels: product.data.existingSizeLabels,
   };
 
   return (

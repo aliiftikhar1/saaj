@@ -49,4 +49,9 @@ export const adminRoutes = {
 
   admins: "/admin/admins",
   settings: "/admin/settings",
+
+  emails: "/admin/emails",
+  emailsCreate: "/admin/emails/create",
+  emailSubscribers: "/admin/emails/subscribers",
+  emailBroadcast: "/admin/emails/broadcast",
 };

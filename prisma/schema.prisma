@@ -136,6 +136,9 @@ model Order {
   billingState         String?
   billingCountry       String?
 
+  // === Tracking ===
+  trackingToken   String? @unique
+
   // === Stripe Details ===
   stripeSessionId String? @unique
 
@@ -292,4 +295,35 @@ model AdminUser {
 enum AdminRoleEnum {
   SUPER_ADMIN
   ADMIN
+}
+
+// === EMAIL TEMPLATES ===
+model EmailTemplate {
+  id          String            @id @default(cuid())
+  type        EmailTemplateType
+  name        String
+  subject     String
+  htmlContent String            @db.Text
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum EmailTemplateType {
+  ORDER_CONFIRMATION
+  ORDER_ADMIN_NOTIFICATION
+  ORDER_STATUS_UPDATE
+  NEWSLETTER
+  PRODUCT_UPDATE
+  COLLECTION_UPDATE
+  CUSTOM
+}
+
+// === NEWSLETTER SUBSCRIBERS ===
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  isActive     Boolean  @default(true)
+  subscribedAt DateTime @default(now())
 }

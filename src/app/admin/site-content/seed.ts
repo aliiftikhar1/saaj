@@ -8,6 +8,80 @@ type SiteContentDefault = {
 };
 
 const SITE_CONTENT_DEFAULTS: SiteContentDefault[] = [
+  // === Social Links & Email Settings ===
+  {
+    key: "social_email",
+    value: "saajtraditionbahawalpur@gmail.com",
+    label: "Public Contact Email (shown in footer & about page)",
+    group: "social-links",
+  },
+  {
+    key: "admin_notification_email",
+    value: "saajtraditionbahawalpur@gmail.com",
+    label: "Admin Notification Email (receives order & system emails)",
+    group: "social-links",
+  },
+  {
+    key: "social_instagram",
+    value: "https://www.instagram.com/saaj_tradition",
+    label: "Instagram URL",
+    group: "social-links",
+  },
+  {
+    key: "social_facebook",
+    value: "https://www.facebook.com/saaj_tradition",
+    label: "Facebook URL",
+    group: "social-links",
+  },
+  {
+    key: "social_twitter",
+    value: "",
+    label: "Twitter / X URL (leave empty to hide)",
+    group: "social-links",
+  },
+  {
+    key: "social_whatsapp",
+    value: "",
+    label: "WhatsApp Link (e.g. https://wa.me/92XXXXXXXXXX, leave empty to hide)",
+    group: "social-links",
+  },
+  {
+    key: "social_tiktok",
+    value: "",
+    label: "TikTok URL (leave empty to hide)",
+    group: "social-links",
+  },
+  // === About Page Images ===
+  {
+    key: "about_image_1",
+    value: "/assets/about-us-image-1.jpg",
+    label: "About Page Image 1 (URL or uploaded path)",
+    group: "about-images",
+  },
+  {
+    key: "about_image_2",
+    value: "/assets/about-us-image-2.jpg",
+    label: "About Page Image 2 (URL or uploaded path)",
+    group: "about-images",
+  },
+  {
+    key: "about_image_3",
+    value: "/assets/about-us-image-3.jpg",
+    label: "About Page Image 3 (URL or uploaded path)",
+    group: "about-images",
+  },
+  {
+    key: "about_image_4",
+    value: "/assets/about-us-image-4.jpg",
+    label: "About Page Image 4 (URL or uploaded path)",
+    group: "about-images",
+  },
+  {
+    key: "about_fact_image",
+    value: "/assets/about-us-fact-image.jpg",
+    label: "About Page Side Image (left of feature cards)",
+    group: "about-images",
+  },
   // === Hero Section ===
   {
     key: "hero_heading",
@@ -268,15 +342,29 @@ const SITE_CONTENT_DEFAULTS: SiteContentDefault[] = [
   },
 ];
 
+// Module-level flag: only seed once per server process lifetime
+let seeded = false;
+
 export async function seedSiteContentDefaults() {
-  for (const item of SITE_CONTENT_DEFAULTS) {
-    const existing = await prisma.siteContent.findUnique({
-      where: { key: item.key },
+  if (seeded) return;
+
+  // 1 query to find all existing keys
+  const existing = await prisma.siteContent.findMany({
+    select: { key: true },
+  });
+  const existingKeys = new Set(existing.map((e) => e.key));
+
+  const missing = SITE_CONTENT_DEFAULTS.filter(
+    (item) => !existingKeys.has(item.key),
+  );
+
+  // 1 batch insert for all missing rows (no-op if all exist)
+  if (missing.length > 0) {
+    await prisma.siteContent.createMany({
+      data: missing,
+      skipDuplicates: true,
     });
-    if (!existing) {
-      await prisma.siteContent.create({
-        data: item,
-      });
-    }
   }
+
+  seeded = true;
 }

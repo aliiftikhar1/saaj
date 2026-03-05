@@ -1,1 +1,1 @@
-export const AUD_CURRENCY = "aud";
+export const PKR_CURRENCY = "pkr";

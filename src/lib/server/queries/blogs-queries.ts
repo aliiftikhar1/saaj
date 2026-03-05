@@ -1,27 +1,23 @@
+import { unstable_cache } from "next/cache";
 import { BlogPost } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { BlogPostWithAuthor, ServerActionResponse } from "@/types/server";
 import { wrapServerCall } from "@/lib/server/helpers";
+import { CACHE_TAG_BLOG } from "@/lib/constants/cache-tags";
 
 // === FETCHES ===
-export async function getBlogs(): Promise<ServerActionResponse<BlogPost[]>> {
-  return wrapServerCall(async () => {
-    const blogs = await prisma.blogPost.findMany({
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+const getBlogsCached = unstable_cache(
+  async () =>
+    prisma.blogPost.findMany({
+      include: { author: { select: { id: true, name: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+  [CACHE_TAG_BLOG, "all"],
+  { tags: [CACHE_TAG_BLOG] },
+);
 
-    return blogs;
-  });
+export async function getBlogs(): Promise<ServerActionResponse<BlogPost[]>> {
+  return wrapServerCall(() => getBlogsCached());
 }
 
 export async function getBlogById(

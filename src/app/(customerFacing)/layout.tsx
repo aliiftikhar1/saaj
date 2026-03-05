@@ -6,7 +6,8 @@ import { CartCountProvider, CartDialogProvider, CartSidebarProvider } from "@/pr
 import { getCartItemCount, getCartAction } from "@/lib/server/actions";
 import { AddToCartDialog } from "@/components/common/AddToCartDialog/AddToCartDialog";
 import { CartSidebar } from "@/components/common/CartSidebar/CartSidebar";
-import { getCollections } from "@/lib/server/queries";
+import { getCollections, getSiteContentMap } from "@/lib/server/queries";
+import { STORE_EMAIL, STORE_INSTAGRAM, STORE_FACEBOOK } from "@/lib/constants/store-information";
 
 export const metadata: Metadata = {
   title: {
@@ -29,6 +30,15 @@ export default async function CustomerLayout({
       }))
     : [];
 
+  const contentMapRes = await getSiteContentMap();
+  const cm = contentMapRes.success ? contentMapRes.data : {};
+  const footerEmail = cm.social_email || STORE_EMAIL;
+  const footerInstagram = cm.social_instagram || STORE_INSTAGRAM;
+  const footerFacebook = cm.social_facebook || STORE_FACEBOOK;
+  const footerWhatsapp = cm.social_whatsapp || undefined;
+  const footerTwitter = cm.social_twitter || undefined;
+  const footerTiktok = cm.social_tiktok || undefined;
+
   return (
     <CartCountProvider fetchCartItemCount={getCartItemCount}>
       <CartSidebarProvider fetchCart={getCartAction}>
@@ -36,7 +46,14 @@ export default async function CustomerLayout({
           <div className="min-h-screen flex flex-col">
             <Navbar collections={collections} />
             <div className="flex-1">{children}</div>
-            <Footer />
+            <Footer
+              email={footerEmail}
+              instagram={footerInstagram}
+              facebook={footerFacebook}
+              whatsapp={footerWhatsapp}
+              twitter={footerTwitter}
+              tiktok={footerTiktok}
+            />
           </div>
           <AddToCartDialog />
           <CartSidebar />

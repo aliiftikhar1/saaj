@@ -79,7 +79,7 @@ export function AddToCartDialogUI(props: AddToCartDialogUIProps) {
                   <p>{`${SIZE_TYPES.ONE_SIZE ? "" : "Size "}${size}`}</p>
                 )}
               </div>
-              <p className="mt-auto text-base text-neutral-10">${price}</p>
+              <p className="mt-auto text-base text-neutral-10">Rs.{price}</p>
             </div>
           </div>
 

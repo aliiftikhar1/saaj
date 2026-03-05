@@ -35,9 +35,9 @@ export async function CartSummaryPanel(props: CartSummaryPanelProps) {
       discount = {
         code: couponCode,
         percent,
-        amount: `$${discountAmount.toFixed(2)}`,
+        amount: `Rs.${discountAmount.toFixed(2)}`,
       };
-      discountedTotalValue = `$${discountedTotal.toFixed(2)}`;
+      discountedTotalValue = `Rs.${discountedTotal.toFixed(2)}`;
     }
   }
 

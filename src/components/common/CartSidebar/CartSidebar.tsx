@@ -57,21 +57,21 @@ export function CartSidebar() {
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-04">
-          <h2 className="text-[17px] font-medium tracking-[-0.02em] text-neutral-12">
-            Your Cart
+        <div className="flex items-center justify-between px-6 md:px-8 py-6 border-b border-neutral-03 shrink-0">
+          <h2 className="text-xl md:text-2xl font-medium tracking-tight text-neutral-12">
+            Cart
             {summary && summary.itemCount > 0 && (
-              <span className="ml-1.5 text-[13px] font-normal text-neutral-09">
+              <span className="ml-2 text-base font-normal text-neutral-08">
                 ({summary.itemCount})
               </span>
             )}
           </h2>
           <button
             onClick={closeSidebar}
-            className="p-2 -mr-2 rounded-full hover:bg-neutral-12/[0.04] transition-colors cursor-pointer"
+            className="p-2 -mr-2 rounded-full hover:bg-neutral-02 transition-colors cursor-pointer text-neutral-09 hover:text-neutral-12"
             aria-label="Close cart"
           >
-            <CloseIcon className="w-4 h-4" />
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -83,8 +83,11 @@ export function CartSidebar() {
             </div>
           ) : isEmpty ? (
             <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-              <p className="text-[15px] text-neutral-09 mb-4">
+              <p className="text-lg font-medium text-neutral-12 mb-2">
                 Your cart is empty
+              </p>
+              <p className="text-sm text-neutral-08 mb-6">
+                Looks like you haven't added anything yet.
               </p>
               <Link
                 href={routes.shop}
@@ -95,7 +98,7 @@ export function CartSidebar() {
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-neutral-04">
+            <div className="divide-y divide-neutral-03">
               {items.map((item) => (
                 <CartSidebarItem
                   key={item.id}
@@ -112,23 +115,23 @@ export function CartSidebar() {
 
         {/* Footer */}
         {!isEmpty && summary && (
-          <div className="border-t border-neutral-04 px-6 py-5 space-y-4 bg-white">
+          <div className="border-t border-neutral-03 px-6 md:px-8 py-6 space-y-4 bg-white shrink-0">
             <div className="flex items-center justify-between">
-              <span className="text-[14px] text-neutral-09">Subtotal</span>
-              <span className="text-[16px] font-medium text-neutral-12">
+              <span className="text-base text-neutral-10 font-medium">Subtotal</span>
+              <span className="text-xl font-medium text-neutral-12">
                 {summary.subtotal}
               </span>
             </div>
-            <p className="text-[12px] text-neutral-08">
-              Shipping & taxes calculated at checkout
+            <p className="text-[13px] text-neutral-08 pt-1">
+              Shipping & taxes calculated at checkout.
             </p>
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-3 pt-3">
               <Link
                 href={routes.cart}
                 onClick={closeSidebar}
                 className={cn(
                   getButtonStyles("light"),
-                  "text-center text-[13px]",
+                  "w-full text-center py-3.5 text-[15px]",
                 )}
               >
                 View Cart
@@ -138,7 +141,7 @@ export function CartSidebar() {
                 onClick={closeSidebar}
                 className={cn(
                   getButtonStyles("dark"),
-                  "text-center text-[13px]",
+                  "w-full text-center py-3.5 text-[15px]",
                 )}
               >
                 Checkout
@@ -209,64 +212,64 @@ function CartSidebarItem({
   };
 
   return (
-    <div className={cn("relative px-6 py-4", isBusy && "opacity-50")}>
-      <div className="flex gap-4">
+    <div className={cn("relative px-6 py-6 md:px-8", isBusy && "opacity-50")}>
+      <div className="flex gap-5">
         {/* Image */}
         <Link
           href={productUrl}
-          className="relative h-[88px] w-[72px] shrink-0 rounded-[4px] overflow-hidden bg-neutral-02"
+          className="relative h-[110px] w-[85px] shrink-0 rounded-md overflow-hidden bg-neutral-02"
         >
           <Image
             src={item.image}
             alt={item.title}
             fill
-            quality={50}
+            quality={60}
             className="object-cover"
-            sizes="72px"
+            sizes="85px"
           />
         </Link>
 
         {/* Details */}
         <div className="flex-1 min-w-0 flex flex-col justify-between">
-          <div>
+          <div className="pr-8">
             <Link
               href={productUrl}
-              className="text-[14px] font-medium text-neutral-12 leading-tight line-clamp-2 hover:text-neutral-09 transition-colors"
+              className="text-[15px] font-medium text-neutral-12 leading-tight line-clamp-2 hover:text-neutral-09 transition-colors"
             >
               {item.title}
             </Link>
-            <p className="text-[12px] text-neutral-08 mt-0.5">
+            <p className="text-[13px] text-neutral-08 mt-1">
               {item.size.label}
             </p>
           </div>
 
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-center justify-between mt-4">
             {/* Quantity Controls */}
-            <div className="flex items-center h-8 border border-neutral-04 rounded-md">
+            <div className="flex items-center h-9 border border-neutral-04 rounded-full overflow-hidden bg-white">
               <button
                 onClick={() => updateQty(optimisticQty - 1)}
                 disabled={isBusy || optimisticQty <= 1}
-                className="w-8 h-full flex items-center justify-center hover:bg-neutral-02 transition-colors rounded-l-md cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-9 h-full flex items-center justify-center hover:bg-neutral-02 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Decrease quantity"
               >
-                <MinusIcon className="w-3 h-3 text-neutral-10" />
+                <MinusIcon className="w-3.5 h-3.5 text-neutral-10" />
               </button>
-              <span className="w-8 text-center text-[13px] font-medium text-neutral-11">
+              <span className="w-8 text-center text-sm font-medium text-neutral-11">
                 {optimisticQty}
               </span>
               <button
                 onClick={() => updateQty(optimisticQty + 1)}
                 disabled={isBusy || optimisticQty >= MAX_CART_ITEM_QUANTITY}
-                className="w-8 h-full flex items-center justify-center hover:bg-neutral-02 transition-colors rounded-r-md cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-9 h-full flex items-center justify-center hover:bg-neutral-02 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Increase quantity"
               >
-                <PlusIcon className="w-3 h-3 text-neutral-10" />
+                <PlusIcon className="w-3.5 h-3.5 text-neutral-10" />
               </button>
             </div>
 
             {/* Price */}
-            <span className="text-[14px] font-medium text-neutral-11">
-              ${lineTotal}
+            <span className="text-[15px] font-medium text-neutral-12">
+              Rs.{lineTotal}
             </span>
           </div>
         </div>
@@ -275,10 +278,10 @@ function CartSidebarItem({
         <button
           onClick={handleRemove}
           disabled={isBusy}
-          className="absolute top-4 right-5 p-1 rounded-full hover:bg-neutral-02 transition-colors cursor-pointer disabled:opacity-30"
+          className="absolute top-6 right-6 md:right-8 p-1.5 rounded-full hover:bg-neutral-02 transition-colors cursor-pointer disabled:opacity-30 text-neutral-08 hover:text-red-500"
           aria-label="Remove item"
         >
-          <TrashIcon className="w-3.5 h-3.5 text-neutral-08" />
+          <TrashIcon className="w-4 h-4" />
         </button>
       </div>
     </div>

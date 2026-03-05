@@ -79,9 +79,9 @@ export default async function ProductPage(props: ProductPageProps) {
             />
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 relative">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 xl:gap-24 relative justify-center">
             {/* Image Gallery */}
-            <div className="w-full lg:w-[50%] lg:max-w-[560px]">
+            <div className="w-full lg:w-1/2">
               <ProductImageGallery
                 images={product.images}
                 productName={product.name}

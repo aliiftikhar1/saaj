@@ -1,17 +1,25 @@
+import { unstable_cache } from "next/cache";
+
 import { prisma } from "@/lib/prisma";
 import { ServerActionResponse } from "@/types/server";
 import { Category } from "@prisma/client";
 import { wrapServerCall } from "@/lib/server/helpers";
+import { CACHE_TAG_CATEGORY } from "@/lib/constants/cache-tags";
 
 // === FETCHES ===
-export async function getAllCategories(): Promise<
-  ServerActionResponse<Category[]>
-> {
-  return wrapServerCall(() =>
+const getAllCategoriesCached = unstable_cache(
+  async () =>
     prisma.category.findMany({
       orderBy: { sortOrder: "asc" },
     }),
-  );
+  [CACHE_TAG_CATEGORY, "all"],
+  { tags: [CACHE_TAG_CATEGORY] },
+);
+
+export async function getAllCategories(): Promise<
+  ServerActionResponse<Category[]>
+> {
+  return wrapServerCall(() => getAllCategoriesCached());
 }
 
 export async function getCategoryById(

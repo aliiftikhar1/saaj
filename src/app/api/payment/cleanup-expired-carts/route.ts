@@ -91,7 +91,7 @@ export async function GET() {
     });
 
     if (abandonedCount > 0 || staleCartsResult.count > 0) {
-      revalidateTag(CACHE_TAG_CART, "default");
+      revalidateTag(CACHE_TAG_CART, "unstable_cache");
     }
 
     return NextResponse.json(

@@ -28,6 +28,7 @@ import {
   AdminDropdownMenuCheckboxItem,
   buttonVariants,
 } from "@/components/admin";
+import { useRouter } from "next/navigation";
 import {
   adminRoutes,
   cn,
@@ -42,6 +43,9 @@ export function AdminProductsTable({
 }: {
   products: ProductGetAllCounts[];
 }) {
+  // === HOOKS ===
+  const router = useRouter();
+
   // === STATE ===
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -137,6 +141,7 @@ export function AdminProductsTable({
       </div>
       <AdminBaseTable
         data={filteredProducts}
+        onRowClick={(row) => router.push(`${adminRoutes.products}/${row.id}/view`)}
         columns={[
           ...productColumns.filter((column) =>
             columnsVisible.has(column.accessorKey),
@@ -148,67 +153,69 @@ export function AdminProductsTable({
               const product = cell.row.original;
 
               return (
-                <AdminDropdownMenu>
-                  <AdminDropdownMenuTrigger asChild>
-                    <AdminButton variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal />
-                    </AdminButton>
-                  </AdminDropdownMenuTrigger>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AdminDropdownMenu>
+                    <AdminDropdownMenuTrigger asChild>
+                      <AdminButton variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal />
+                      </AdminButton>
+                    </AdminDropdownMenuTrigger>
 
-                  <AdminDropdownMenuContent align="end">
-                    <Link href={`${adminRoutes.products}/${product.id}/view`}>
-                      <AdminDropdownMenuItem>View Details</AdminDropdownMenuItem>
-                    </Link>
-                    <Link href={`${adminRoutes.products}/${product.id}`}>
-                      <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
-                    </Link>
-                    <AdminDropdownMenuSeparator />
+                    <AdminDropdownMenuContent align="end">
+                      <Link href={`${adminRoutes.products}/${product.id}/view`}>
+                        <AdminDropdownMenuItem>View Details</AdminDropdownMenuItem>
+                      </Link>
+                      <Link href={`${adminRoutes.products}/${product.id}`}>
+                        <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
+                      </Link>
+                      <AdminDropdownMenuSeparator />
 
-                    <AdminDropdownMenuItem
-                      onSelect={async () => {
-                        const result = await toggleProductFeatured(product.id);
-                        if (result.success) {
-                          setProductsState((prev) =>
-                            prev.map((p) =>
-                              p.id === product.id
-                                ? { ...p, isFeatured: result.data.isFeatured }
-                                : p,
-                            ),
-                          );
-                          toast.success(
-                            result.data.isFeatured
-                              ? "Product added to New Arrivals"
-                              : "Product removed from New Arrivals",
-                          );
-                        } else {
-                          toast.error("Failed to update featured status");
-                        }
-                      }}
-                    >
-                      {product.isFeatured === "Yes"
-                        ? "Remove from New Arrivals"
-                        : "Add to New Arrivals"}
-                    </AdminDropdownMenuItem>
+                      <AdminDropdownMenuItem
+                        onSelect={async () => {
+                          const result = await toggleProductFeatured(product.id);
+                          if (result.success) {
+                            setProductsState((prev) =>
+                              prev.map((p) =>
+                                p.id === product.id
+                                  ? { ...p, isFeatured: result.data.isFeatured }
+                                  : p,
+                              ),
+                            );
+                            toast.success(
+                              result.data.isFeatured
+                                ? "Product added to New Arrivals"
+                                : "Product removed from New Arrivals",
+                            );
+                          } else {
+                            toast.error("Failed to update featured status");
+                          }
+                        }}
+                      >
+                        {product.isFeatured === "Yes"
+                          ? "Remove from New Arrivals"
+                          : "Add to New Arrivals"}
+                      </AdminDropdownMenuItem>
 
-                    <AdminDropdownMenuSeparator />
+                      <AdminDropdownMenuSeparator />
 
-                    <AdminDropdownMenuItem
-                      variant="destructive"
-                      onSelect={() => {
-                        setPendingDeleteId(product.id);
-                      }}
-                    >
-                      <AdminTooltip>
-                        <AdminTooltipTrigger asChild>
-                          <span className="w-full flex items-center">
-                            Delete
-                          </span>
-                        </AdminTooltipTrigger>
-                      </AdminTooltip>
-                    </AdminDropdownMenuItem>
-                  </AdminDropdownMenuContent>
-                </AdminDropdownMenu>
+                      <AdminDropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => {
+                          setPendingDeleteId(product.id);
+                        }}
+                      >
+                        <AdminTooltip>
+                          <AdminTooltipTrigger asChild>
+                            <span className="w-full flex items-center">
+                              Delete
+                            </span>
+                          </AdminTooltipTrigger>
+                        </AdminTooltip>
+                      </AdminDropdownMenuItem>
+                    </AdminDropdownMenuContent>
+                  </AdminDropdownMenu>
+                </div>
               );
             },
           },

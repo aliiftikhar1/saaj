@@ -26,6 +26,7 @@ import {
   AdminAlertDialogFooter,
   AdminInput,
 } from "@/components/admin";
+import { useRouter } from "next/navigation";
 import { deleteAuthorById } from "@/lib/server/actions";
 import { AuthorWithPostCount } from "@/types/client";
 import { adminRoutes } from "@/lib";
@@ -36,6 +37,9 @@ export function AdminAuthorsTable({
 }: {
   authors: AuthorWithPostCount[];
 }) {
+  // === HOOKS ===
+  const router = useRouter();
+
   // === STATE ===
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -76,6 +80,7 @@ export function AdminAuthorsTable({
       />
       <AdminBaseTable
         data={filteredAuthors}
+        onRowClick={(row) => router.push(`${adminRoutes.authors}/${row.id}`)}
         columns={[
           ...authorColumns,
           {
@@ -86,52 +91,54 @@ export function AdminAuthorsTable({
               const canDelete = hasZeroPosts(author);
 
               return (
-                <AdminDropdownMenu>
-                  <AdminDropdownMenuTrigger asChild>
-                    <AdminButton variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal />
-                    </AdminButton>
-                  </AdminDropdownMenuTrigger>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AdminDropdownMenu>
+                    <AdminDropdownMenuTrigger asChild>
+                      <AdminButton variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal />
+                      </AdminButton>
+                    </AdminDropdownMenuTrigger>
 
-                  <AdminDropdownMenuContent align="end">
-                    <Link href={`${adminRoutes.authors}/${author.id}`}>
-                      <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
-                    </Link>
-                    <AdminDropdownMenuSeparator />
+                    <AdminDropdownMenuContent align="end">
+                      <Link href={`${adminRoutes.authors}/${author.id}`}>
+                        <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
+                      </Link>
+                      <AdminDropdownMenuSeparator />
 
-                    <AdminDropdownMenuItem
-                      variant="destructive"
-                      onSelect={(e) => {
-                        if (!canDelete) {
-                          e.preventDefault();
-                          return;
+                      <AdminDropdownMenuItem
+                        variant="destructive"
+                        onSelect={(e) => {
+                          if (!canDelete) {
+                            e.preventDefault();
+                            return;
+                          }
+                          setPendingDeleteId(author.id);
+                        }}
+                        className={
+                          canDelete
+                            ? ""
+                            : "opacity-50 cursor-not-allowed pointer-events-auto"
                         }
-                        setPendingDeleteId(author.id);
-                      }}
-                      className={
-                        canDelete
-                          ? ""
-                          : "opacity-50 cursor-not-allowed pointer-events-auto"
-                      }
-                    >
-                      <AdminTooltip>
-                        <AdminTooltipTrigger asChild>
-                          <span className="w-full flex items-center">
-                            Delete
-                          </span>
-                        </AdminTooltipTrigger>
+                      >
+                        <AdminTooltip>
+                          <AdminTooltipTrigger asChild>
+                            <span className="w-full flex items-center">
+                              Delete
+                            </span>
+                          </AdminTooltipTrigger>
 
-                        {!canDelete && (
-                          <AdminTooltipContent className="text-sm">
-                            Author cannot be deleted while they still have
-                            blogs.
-                          </AdminTooltipContent>
-                        )}
-                      </AdminTooltip>
-                    </AdminDropdownMenuItem>
-                  </AdminDropdownMenuContent>
-                </AdminDropdownMenu>
+                          {!canDelete && (
+                            <AdminTooltipContent className="text-sm">
+                              Author cannot be deleted while they still have
+                              blogs.
+                            </AdminTooltipContent>
+                          )}
+                        </AdminTooltip>
+                      </AdminDropdownMenuItem>
+                    </AdminDropdownMenuContent>
+                  </AdminDropdownMenu>
+                </div>
               );
             },
           },

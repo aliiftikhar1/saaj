@@ -6,3 +6,5 @@ export const CACHE_TAG_TEAM = "team";
 export const CACHE_TAG_SITE_CONTENT = "site-content";
 export const CACHE_TAG_TESTIMONIAL = "testimonial";
 export const CACHE_TAG_COUPON = "coupon";
+export const CACHE_TAG_BLOG = "blog";
+export const CACHE_TAG_AUTHOR = "author";

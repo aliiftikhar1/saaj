@@ -18,7 +18,7 @@ import { ServerActionResponse } from "@/types/server";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { CartStatus, OrderStatus, PaymentMethod, Prisma } from "@prisma/client";
 import { getCartCountCached, refreshCartCookie } from "../helpers";
-import { CACHE_TAG_CART, CACHE_TAG_PRODUCT } from "@/lib/constants";
+import { CACHE_TAG_CART, CACHE_TAG_PRODUCT, PKR_CURRENCY } from "@/lib/constants";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 import { getCart } from "@/lib/server/queries/cart-queries";
 import { computeCartShipping } from "@/lib/server/actions/shipping-actions";
@@ -223,7 +223,7 @@ export async function addToCart({
 
     refreshCartCookie(cookieStore, cartId);
 
-    revalidateTag(CACHE_TAG_CART, "default");
+    revalidateTag(CACHE_TAG_CART, "unstable_cache");
 
     return { quantity: cartQuantity };
   });
@@ -281,7 +281,7 @@ export async function updateCartItemQuantity({
       return newCartTotal;
     });
 
-    revalidateTag(CACHE_TAG_CART, "default");
+    revalidateTag(CACHE_TAG_CART, "unstable_cache");
 
     refreshCartCookie(cookieStore, existingCartId);
 
@@ -318,7 +318,7 @@ export async function removeCartItem({
       return items.reduce((sum, item) => sum + item.quantity, 0);
     });
 
-    revalidateTag(CACHE_TAG_CART, "default");
+    revalidateTag(CACHE_TAG_CART, "unstable_cache");
 
     refreshCartCookie(cookieStore, existingCartId);
 
@@ -416,7 +416,7 @@ export async function initiateCheckout(
               : {}),
           },
         });
-        revalidateTag(CACHE_TAG_CART, "default");
+        revalidateTag(CACHE_TAG_CART, "unstable_cache");
       }
       return;
     }
@@ -530,6 +530,7 @@ export async function initiateCheckout(
               data: {
                 cartId,
                 totalPrice,
+                trackingToken: nanoid(32),
                 shippingAmount: shippingCharge > 0 ? new Decimal(shippingCharge) : null,
                 status: OrderStatus.PENDING,
                 paymentMethod: PaymentMethod.STRIPE,
@@ -560,7 +561,13 @@ export async function initiateCheckout(
     );
 
     // === STEP 3 & 4: SAVE MOCK SESSION REFERENCE (Stripe disabled) ===
-    // TODO: Re-enable Stripe by replacing this block with real paymentIntents.create
+    // TODO: Re-enable Stripe — replace block below with:
+    // const pi = await stripe.paymentIntents.create({
+    //   amount: Math.round(order.totalPrice.toNumber() * 100),
+    //   currency: PKR_CURRENCY,  // "pkr"
+    //   metadata: { orderId: order.id },
+    // });
+    // await prisma.order.update({ where: { id: order.id }, data: { stripeSessionId: pi.client_secret } });
     await prisma.order.update({
       where: { id: order.id },
       data: {
@@ -568,8 +575,8 @@ export async function initiateCheckout(
       },
     });
 
-    revalidateTag(CACHE_TAG_CART, "default");
-    revalidateTag(CACHE_TAG_PRODUCT, "default");
+    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
   });
 }
 
@@ -577,5 +584,5 @@ export async function initiateCheckout(
 export async function clearCart(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_CART_ID);
-  revalidateTag(CACHE_TAG_CART, "default");
+  revalidateTag(CACHE_TAG_CART, "unstable_cache");
 }

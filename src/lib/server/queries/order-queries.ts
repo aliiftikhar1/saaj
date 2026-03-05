@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+
 import { Order, OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ServerActionResponse } from "@/types/server";
@@ -7,6 +9,7 @@ import {
   OrderWithCart,
 } from "@/types/client";
 import { wrapServerCall } from "../helpers";
+import { CACHE_TAG_CART } from "@/lib/constants/cache-tags";
 
 export async function getCurrentOrderById(
   orderId: string,
@@ -68,10 +71,8 @@ export async function getAdminOrderById(
   });
 }
 
-export async function getOrderedOrders(): Promise<
-  ServerActionResponse<OrderWithCart[]>
-> {
-  return wrapServerCall(async () => {
+const getOrderedOrdersCached = unstable_cache(
+  async () => {
     const orders = await prisma.order.findMany({
       include: {
         cart: {
@@ -96,7 +97,15 @@ export async function getOrderedOrders(): Promise<
         })),
       },
     }));
-  });
+  },
+  [CACHE_TAG_CART, "ordered-orders"],
+  { tags: [CACHE_TAG_CART], revalidate: 60 },
+);
+
+export async function getOrderedOrders(): Promise<
+  ServerActionResponse<OrderWithCart[]>
+> {
+  return wrapServerCall(() => getOrderedOrdersCached());
 }
 
 export async function getDashboardStats(): Promise<

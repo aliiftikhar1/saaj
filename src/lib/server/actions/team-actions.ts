@@ -1,7 +1,7 @@
 "use server";
 
 import { put } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { TeamMemberMutationInput, ServerActionResponse } from "@/types/server";
@@ -11,6 +11,7 @@ import {
 } from "@/components/admin/forms/AdminTeamForm/schema";
 import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
 import { adminRoutes, routes } from "@/lib/routing";
+import { CACHE_TAG_TEAM } from "@/lib/constants/cache-tags";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 
@@ -25,6 +26,7 @@ export async function deleteTeamMemberById(
 
     const deleted = await prisma.teamMember.delete({ where: { id } });
 
+    revalidateTag(CACHE_TAG_TEAM, "unstable_cache");
     revalidatePath(adminRoutes.team);
     revalidatePath(routes.about);
 
@@ -61,6 +63,7 @@ export async function createTeamMember(
       },
     });
 
+    revalidateTag(CACHE_TAG_TEAM, "unstable_cache");
     revalidatePath(adminRoutes.team);
     revalidatePath(routes.about);
 
@@ -77,6 +80,7 @@ export async function updateTeamMemberById(
       return { id };
     }
 
+    revalidateTag(CACHE_TAG_TEAM, "unstable_cache");
     revalidatePath(adminRoutes.team);
     revalidatePath(routes.about);
 

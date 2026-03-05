@@ -114,8 +114,8 @@ export async function POST(req: NextRequest) {
           console.error("Failed to increment coupon usage:", err);
         }
 
-        revalidateTag(CACHE_TAG_CART, "default");
-        revalidateTag(CACHE_TAG_PRODUCT, "default");
+        revalidateTag(CACHE_TAG_CART, "unstable_cache");
+        revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
         revalidatePath(adminRoutes.orders);
         revalidatePath(adminRoutes.products);
       }

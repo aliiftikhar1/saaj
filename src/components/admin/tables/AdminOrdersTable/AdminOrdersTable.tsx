@@ -21,6 +21,7 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from "@/components/admin";
+import { useRouter } from "next/navigation";
 import { adminRoutes, formatDateToYYYYMMDD } from "@/lib";
 import { orderColumns, defaultVisibleOrderColumnIds } from "./columns";
 import { OrderWithCart } from "@/types/client";
@@ -43,6 +44,9 @@ type AdminOrdersTableProps = {
 export function AdminOrdersTable(props: AdminOrdersTableProps) {
   // === PROPS ===
   const { orders } = props;
+
+  // === HOOKS ===
+  const router = useRouter();
 
   // === STATE ===
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,7 +80,7 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
       return {
         ...order,
         itemsCount,
-        totalPrice: `$${order.totalPrice.toFixed(2)}`,
+        totalPrice: `Rs.${order.totalPrice.toFixed(2)}`,
         createdAt: formatDateToYYYYMMDD(order.createdAt) ?? "",
         updatedAt: formatDateToYYYYMMDD(order.updatedAt) ?? "",
       };
@@ -135,6 +139,7 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
       </div>
       <AdminBaseTable
         data={filteredOrders}
+        onRowClick={(row) => router.push(`${adminRoutes.orders}/${row.id}`)}
         columns={[
           ...orderColumns.filter((column) =>
             columnsVisible.has(column.accessorKey),
@@ -146,7 +151,7 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
               const order = cell.row.original;
 
               return (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {/* Order Status Dropdown */}
                   <AdminSelect
                     value={order.status}

@@ -108,12 +108,12 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
     }
 
     const shippingDisplay =
-      shippingAmount > 0 ? `$${shippingAmount.toFixed(2)}` : "Free";
+      shippingAmount > 0 ? `Rs.${shippingAmount.toFixed(2)}` : "Free";
 
     const summary: CartSummary = {
-      subtotal: `$${subtotalDecimal.toFixed(2)}`,
+      subtotal: `Rs.${subtotalDecimal.toFixed(2)}`,
       shipping: shippingDisplay,
-      total: `$${(subtotalDecimal + shippingAmount).toFixed(2)}`,
+      total: `Rs.${(subtotalDecimal + shippingAmount).toFixed(2)}`,
       itemCount,
     };
 

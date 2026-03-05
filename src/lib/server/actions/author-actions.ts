@@ -1,7 +1,7 @@
 "use server";
 
 import { put } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { AuthorMutationInput, ServerActionResponse } from "@/types/server";
@@ -11,6 +11,7 @@ import {
 } from "@/components/admin/forms/AdminAuthorsForm/schema";
 import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
 import { adminRoutes } from "@/lib/routing";
+import { CACHE_TAG_AUTHOR } from "@/lib/constants/cache-tags";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 
@@ -25,6 +26,7 @@ export async function deleteAuthorById(
 
     const deleted = await prisma.author.delete({ where: { id } });
 
+    revalidateTag(CACHE_TAG_AUTHOR, "unstable_cache");
     revalidatePath(adminRoutes.authors);
     revalidatePath(adminRoutes.blogsCreate);
 
@@ -56,6 +58,7 @@ export async function createAuthor(
       },
     });
 
+    revalidateTag(CACHE_TAG_AUTHOR, "unstable_cache");
     revalidatePath(adminRoutes.authors);
     revalidatePath(adminRoutes.blogsCreate);
 
@@ -72,6 +75,7 @@ export async function updateAuthorById(
       return { id };
     }
 
+    revalidateTag(CACHE_TAG_AUTHOR, "unstable_cache");
     revalidatePath(adminRoutes.authors);
     revalidatePath(adminRoutes.blogs);
     revalidatePath(adminRoutes.blogsCreate);

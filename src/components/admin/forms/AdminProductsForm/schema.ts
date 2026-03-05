@@ -41,8 +41,12 @@ export const AdminProductsFormSchema = (isEditMode: boolean) =>
       isFeatured: z.boolean().optional().default(false),
 
       sizeType: SizeTypeEnum.optional().refine((val) => val !== undefined, {
-        message: "Size is required",
+        message: "Size type is required",
       }),
+
+      selectedSizes: z
+        .array(z.string())
+        .min(1, "Select at least one size"),
 
       images: isEditMode
         ? z.array(z.instanceof(File)).optional()

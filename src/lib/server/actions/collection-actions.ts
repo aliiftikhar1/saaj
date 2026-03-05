@@ -1,10 +1,11 @@
 "use server";
 
 import { put } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { CollectionMutationInput, ServerActionResponse } from "@/types/server";
+import { CACHE_TAG_COLLECTION } from "@/lib/constants/cache-tags";
 import {
   AdminFormAddCollectionData,
   AdminFormEditCollectionData,
@@ -27,6 +28,7 @@ export async function deleteCollectionById(
 
     revalidatePath(adminRoutes.collections);
     revalidatePath(routes.home);
+    revalidateTag(CACHE_TAG_COLLECTION, "unstable_cache");
 
     return { id: deleted.id };
   });
@@ -64,6 +66,7 @@ export async function createCollection(
 
     revalidatePath(adminRoutes.collections);
     revalidatePath(routes.home);
+    revalidateTag(CACHE_TAG_COLLECTION, "unstable_cache");
 
     return { id: created.id };
   });
@@ -80,6 +83,7 @@ export async function updateCollectionById(
 
     revalidatePath(adminRoutes.collections);
     revalidatePath(routes.home);
+    revalidateTag(CACHE_TAG_COLLECTION, "unstable_cache");
 
     if (data.image) {
       const imageFile = data.image;

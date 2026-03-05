@@ -228,7 +228,11 @@ export async function getProductById(
   id: string,
 ): Promise<
   ServerActionResponse<
-    (SerializedProduct & { collections: { id: string; name: string }[] }) | null
+    | (SerializedProduct & {
+        collections: { id: string; name: string }[];
+        existingSizeLabels: string[];
+      })
+    | null
   >
 > {
   return wrapServerCall(async () => {
@@ -238,18 +242,23 @@ export async function getProductById(
         collections: {
           select: { id: true, name: true },
         },
+        sizes: {
+          select: { label: true },
+        },
       },
     });
 
     if (!product) return null;
-    return serializeProduct(product);
+    const serialized = serializeProduct(product);
+    return {
+      ...serialized,
+      existingSizeLabels: product.sizes.map((s) => s.label),
+    };
   });
 }
 
-export async function getProductBySlug(
-  slug: string,
-): Promise<ServerActionResponse<ProductWithSizes | null>> {
-  return wrapServerCall(async () => {
+const getProductBySlugCached = unstable_cache(
+  async (slug: string) => {
     const product = await prisma.product.findFirst({
       where: { slug },
       include: {
@@ -260,19 +269,15 @@ export async function getProductBySlug(
 
     if (!product) return null;
 
-    // Get the appropriate size order for this product's size type
     const sizeOrder = product.sizeType
       ? SIZE_TEMPLATES[product.sizeType as keyof typeof SIZE_TEMPLATES]
       : SIZE_TEMPLATES[SIZE_TYPES.STANDARD];
 
-    // Sort sizes based on the template order
     product.sizes.sort((a, b) => {
       const aIndex = sizeOrder.indexOf(a.label);
       const bIndex = sizeOrder.indexOf(b.label);
-
       if (aIndex === -1) return 1;
       if (bIndex === -1) return -1;
-
       return aIndex - bIndex;
     });
 
@@ -285,7 +290,15 @@ export async function getProductBySlug(
         stockReserved: s.stockReserved,
       })),
     };
-  });
+  },
+  [CACHE_TAG_PRODUCT, "by-slug"],
+  { tags: [CACHE_TAG_PRODUCT] },
+);
+
+export async function getProductBySlug(
+  slug: string,
+): Promise<ServerActionResponse<ProductWithSizes | null>> {
+  return wrapServerCall(async () => getProductBySlugCached(slug));
 }
 
 export async function getDashboardProductStats(): Promise<

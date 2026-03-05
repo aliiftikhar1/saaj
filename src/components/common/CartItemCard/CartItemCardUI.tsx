@@ -78,7 +78,7 @@ export function CartItemCardUI(props: CartItemCardUIProps) {
             </Link>
             <p className="text-sm text-neutral-10 mt-1">Size: {size.label}</p>
             <p className="text-base md:text-lg font-medium text-neutral-11 mt-2">
-              ${itemTotal}
+              Rs.{itemTotal}
             </p>
           </div>
 

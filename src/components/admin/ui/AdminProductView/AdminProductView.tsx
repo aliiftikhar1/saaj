@@ -60,14 +60,14 @@ export function AdminProductView(props: AdminProductViewProps) {
         <div className="bg-neutral-01 p-4 rounded">
           <p className="text-sm text-neutral-09 mb-1">Price</p>
           <p className="font-semibold text-neutral-11 text-lg">
-            ${product.price.toFixed(2)}
+            Rs.{product.price.toFixed(2)}
           </p>
         </div>
         {product.compareAtPrice && (
           <div className="bg-neutral-01 p-4 rounded">
             <p className="text-sm text-neutral-09 mb-1">Compare At</p>
             <p className="font-semibold text-neutral-11 text-lg line-through">
-              ${product.compareAtPrice.toFixed(2)}
+              Rs.{product.compareAtPrice.toFixed(2)}
             </p>
           </div>
         )}

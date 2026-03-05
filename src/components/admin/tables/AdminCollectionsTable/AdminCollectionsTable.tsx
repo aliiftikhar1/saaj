@@ -23,6 +23,7 @@ import {
   AdminAlertDialogFooter,
   AdminInput,
 } from "@/components/admin";
+import { useRouter } from "next/navigation";
 import { deleteCollectionById } from "@/lib/server/actions";
 import { CollectionItem } from "@/types/client";
 import { adminRoutes } from "@/lib";
@@ -33,6 +34,7 @@ export function AdminCollectionsTable({
 }: {
   collections: CollectionItem[];
 }) {
+  const router = useRouter();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [collectionsState, setCollectionsState] = useState(collections);
@@ -65,6 +67,7 @@ export function AdminCollectionsTable({
       />
       <AdminBaseTable
         data={filteredCollections}
+        onRowClick={(row) => router.push(`${adminRoutes.collections}/${row.id}`)}
         columns={[
           ...collectionColumns,
           {
@@ -73,28 +76,30 @@ export function AdminCollectionsTable({
             cell: (cell) => {
               const collection = cell.row.original;
               return (
-                <AdminDropdownMenu>
-                  <AdminDropdownMenuTrigger asChild>
-                    <AdminButton variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal />
-                    </AdminButton>
-                  </AdminDropdownMenuTrigger>
-                  <AdminDropdownMenuContent align="end">
-                    <Link
-                      href={`${adminRoutes.collections}/${collection.id}`}
-                    >
-                      <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
-                    </Link>
-                    <AdminDropdownMenuSeparator />
-                    <AdminDropdownMenuItem
-                      variant="destructive"
-                      onSelect={() => setPendingDeleteId(collection.id)}
-                    >
-                      Delete
-                    </AdminDropdownMenuItem>
-                  </AdminDropdownMenuContent>
-                </AdminDropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AdminDropdownMenu>
+                    <AdminDropdownMenuTrigger asChild>
+                      <AdminButton variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal />
+                      </AdminButton>
+                    </AdminDropdownMenuTrigger>
+                    <AdminDropdownMenuContent align="end">
+                      <Link
+                        href={`${adminRoutes.collections}/${collection.id}`}
+                      >
+                        <AdminDropdownMenuItem>Edit</AdminDropdownMenuItem>
+                      </Link>
+                      <AdminDropdownMenuSeparator />
+                      <AdminDropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => setPendingDeleteId(collection.id)}
+                      >
+                        Delete
+                      </AdminDropdownMenuItem>
+                    </AdminDropdownMenuContent>
+                  </AdminDropdownMenu>
+                </div>
               );
             },
           },

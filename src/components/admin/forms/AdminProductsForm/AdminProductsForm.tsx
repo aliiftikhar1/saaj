@@ -25,6 +25,7 @@ import {
   AdminSelectGroup,
   AdminSelectItem,
   AdminCheckbox,
+  ImageCropDialog,
 } from "@/components/admin";
 
 import { AdminProductsFormData, AdminProductsFormSchema } from "./schema";
@@ -33,6 +34,7 @@ import {
   roundToTwoDecimals,
   API_ROUTES,
   SIZE_TEMPLATES,
+  SIZE_TYPES,
 } from "@/lib";
 import {
   createProduct,
@@ -61,6 +63,8 @@ type ProductFormData = {
   categoryId: string | null;
   sizeType: SizeTypeEnum | null;
   collectionIds?: string[];
+  /** Labels of existing sizes (for edit mode pre-selection) */
+  existingSizeLabels?: string[];
 };
 
 type AdminProductsFormProps = {
@@ -84,6 +88,20 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isActionLocked, setIsActionLocked] = useState(false);
+  /** Queue of object URLs waiting to be cropped (for multi-file selection) */
+  const [cropQueue, setCropQueue] = useState<{ src: string; name: string }[]>([]);
+  const [activeCrop, setActiveCrop] = useState<{ src: string; name: string } | null>(null);
+  /**
+   * Re-crop state — triggered by clicking the crop icon on an existing image.
+   * savedUrl is set when re-cropping a saved URL; fileIndex when re-cropping a
+   * newly-added file that hasn't been uploaded yet.
+   */
+  const [reCrop, setReCrop] = useState<{
+    src: string;
+    name: string;
+    savedUrl: string | null;
+    fileIndex: number | null;
+  } | null>(null);
 
   // === HOOKS ===
   const newImagePreviews = usePreviewUrls(files);
@@ -109,6 +127,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
       slug: productData?.slug,
       sizeType:
         isEditMode && productData?.sizeType ? productData?.sizeType : undefined,
+      selectedSizes: productData?.existingSizeLabels ?? [],
       isActive: productData?.isActive ?? true,
       isFeatured: productData?.isFeatured ?? false,
       imageUrls: productData?.images || [],
@@ -119,6 +138,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
   // === WATCHERS ===
   const categoryValue = watch("category");
   const sizeTypeValue = watch("sizeType");
+  const selectedSizesValue = watch("selectedSizes") ?? [];
   const isActiveValue = watch("isActive");
   const isFeaturedValue = watch("isFeatured");
   const imageUrlsValue = watch("imageUrls");
@@ -190,25 +210,86 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
       return;
     }
 
-    // Compress all selected files in parallel
-    const compressionResults = await Promise.all(
-      selectedFiles.map(compressImage),
-    );
+    // Reset input so the same file can be re-selected after cropping
+    if (fileInputRef.current) fileInputRef.current.value = "";
 
-    // Filter out failed compressions
-    const validFiles = compressionResults.filter(
-      (file): file is File => file !== null,
-    );
+    // Build object-URL queue for the crop dialog
+    const queue = selectedFiles.map((f) => ({
+      src: URL.createObjectURL(f),
+      name: f.name,
+    }));
 
-    if (validFiles.length === 0) {
-      return;
+    setActiveCrop(queue[0]);
+    setCropQueue(queue.slice(1));
+  };
+
+  const handleCropConfirm = async (croppedFile: File) => {
+    // Revoke the just-cropped object URL
+    if (activeCrop) URL.revokeObjectURL(activeCrop.src);
+
+    const compressed = await compressImage(croppedFile);
+    if (compressed) {
+      const updated = [...files, compressed];
+      setFiles(updated);
+      setValue("images", updated, { shouldValidate: true });
     }
 
-    // Add new files to existing ones
-    const updatedFiles = [...files, ...validFiles];
+    // Advance the queue
+    const [next, ...rest] = cropQueue;
+    setActiveCrop(next ?? null);
+    setCropQueue(rest);
+  };
 
-    setValue("images", updatedFiles, { shouldValidate: true });
-    setFiles(updatedFiles);
+  const handleCropClose = () => {
+    // Revoke all pending object URLs to free memory
+    if (activeCrop) URL.revokeObjectURL(activeCrop.src);
+    cropQueue.forEach((item) => URL.revokeObjectURL(item.src));
+    setActiveCrop(null);
+    setCropQueue([]);
+  };
+
+  // === RE-CROP handlers ===
+  const handleReCropSaved = (savedUrl: string) => {
+    setReCrop({ src: savedUrl, name: "recropped.jpg", savedUrl, fileIndex: null });
+  };
+
+  const handleReCropNewFile = (fileIndex: number) => {
+    const file = files[fileIndex];
+    if (!file) return;
+    const blobUrl = URL.createObjectURL(file);
+    setReCrop({ src: blobUrl, name: file.name, savedUrl: null, fileIndex });
+  };
+
+  const handleReCropConfirm = async (croppedFile: File) => {
+    if (!reCrop) return;
+    const snap = reCrop;
+    setReCrop(null);
+
+    if (snap.savedUrl) {
+      // Remove the old saved URL and push the newly cropped file as a new upload
+      const updatedUrls = savedImageUrls.filter((u) => u !== snap.savedUrl);
+      setValue("imageUrls", updatedUrls, { shouldValidate: true });
+    } else if (snap.fileIndex !== null) {
+      URL.revokeObjectURL(snap.src);
+    }
+
+    const compressed = await compressImage(croppedFile);
+    if (compressed) {
+      let updated: File[];
+      if (snap.fileIndex !== null) {
+        // Replace in-place
+        updated = files.map((f, i) => (i === snap.fileIndex ? compressed : f));
+      } else {
+        updated = [...files, compressed];
+      }
+      setFiles(updated);
+      setValue("images", updated, { shouldValidate: true });
+    }
+  };
+
+  const handleReCropClose = () => {
+    if (reCrop && reCrop.fileIndex !== null) URL.revokeObjectURL(reCrop.src);
+    setReCrop(null);
   };
 
   const handleProductSubmit = async ({
@@ -356,7 +437,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
 
               {/* PRICE */}
               <AdminField>
-                <AdminFieldLabel htmlFor="price">Price ($)</AdminFieldLabel>
+                <AdminFieldLabel htmlFor="price">Price (Rs.)</AdminFieldLabel>
                 <AdminInput
                   id="price"
                   type="number"
@@ -379,7 +460,7 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               {/* COMPARE AT PRICE (SALE) */}
               <AdminField>
                 <AdminFieldLabel htmlFor="compareAtPrice">
-                  Compare-at Price ($)
+                  Compare-at Price (Rs.)
                 </AdminFieldLabel>
                 <AdminFieldDescription>
                   Original price before sale. Leave empty if not on sale. Must be
@@ -413,6 +494,9 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
                 <AdminFieldLabel htmlFor="productImages">
                   Product Images
                 </AdminFieldLabel>
+                <AdminFieldDescription>
+                  Each image will open a cropper so you can adjust before uploading.
+                </AdminFieldDescription>
                 <AdminInput
                   id="productImages"
                   className="hidden"
@@ -462,6 +546,24 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
                           aria-label="Remove image"
                         >
                           <CloseIcon className="h-3.5 w-3.5" />
+                        </button>
+                        {/* Re-crop button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (savedImageUrls.includes(preview)) {
+                              handleReCropSaved(preview);
+                            } else {
+                              handleReCropNewFile(index - savedImageUrls.length);
+                            }
+                          }}
+                          className="absolute top-1.5 left-1.5 bg-black/70 hover:bg-black backdrop-blur-sm text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
+                          aria-label="Re-crop image"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+                            <path d="M18 22V8a2 2 0 0 0-2-2H2" />
+                          </svg>
                         </button>
                       </div>
                     ))}
@@ -556,27 +658,70 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               )}
               <AdminSelect
                 value={sizeTypeValue ?? ""}
-                onValueChange={(val) =>
+                onValueChange={(val) => {
                   setValue("sizeType", val as SizeTypeEnum, {
                     shouldValidate: true,
-                  })
-                }
+                  });
+                  // Auto-select all sizes for the new type
+                  const template = SIZE_TEMPLATES[val as keyof typeof SIZE_TEMPLATES] ?? [];
+                  setValue("selectedSizes", [...template], { shouldValidate: true });
+                }}
               >
-                <AdminSelectTrigger id="productSizes" className="w-[180px]">
+                <AdminSelectTrigger id="productSizes" className="w-[220px]">
                   <AdminSelectValue />
                 </AdminSelectTrigger>
                 <AdminSelectContent>
                   <AdminSelectGroup>
-                    {Object.keys(SIZE_TEMPLATES).map((size) => (
-                      <AdminSelectItem key={size} value={size}>
-                        {size} (
-                        {SIZE_TEMPLATES[size as SizeTypeEnum].join(", ")})
-                      </AdminSelectItem>
-                    ))}
+                    {/* ShoeSize excluded — this is a clothing store */}
+                    {Object.entries(SIZE_TEMPLATES)
+                      .filter(([key]) => key !== SIZE_TYPES.SHOE)
+                      .map(([key, labels]) => (
+                        <AdminSelectItem key={key} value={key}>
+                          {key} ({labels.join(", ")})
+                        </AdminSelectItem>
+                      ))}
                   </AdminSelectGroup>
                 </AdminSelectContent>
               </AdminSelect>
               <AdminFieldError errors={[errors.sizeType]} />
+
+              {/* Individual size checkboxes */}
+              {sizeTypeValue && sizeTypeValue !== SIZE_TYPES.ONE_SIZE && (
+                <div className="mt-2">
+                  <AdminFieldDescription>
+                    Check the sizes you have in stock. Unchecked sizes won&apos;t be available.
+                  </AdminFieldDescription>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(SIZE_TEMPLATES[sizeTypeValue as keyof typeof SIZE_TEMPLATES] ?? []).map(
+                      (label) => {
+                        const checked = selectedSizesValue.includes(label);
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => {
+                              const updated = checked
+                                ? selectedSizesValue.filter((s) => s !== label)
+                                : [...selectedSizesValue, label];
+                              setValue("selectedSizes", updated, {
+                                shouldValidate: true,
+                              });
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                              checked
+                                ? "bg-black text-white border-black"
+                                : "bg-white text-neutral-500 border-neutral-300 hover:border-black"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+              )}
+              <AdminFieldError errors={[errors.selectedSizes]} />
             </AdminField>
 
             {/* NEW ARRIVALS (isFeatured) */}
@@ -585,21 +730,26 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               <AdminFieldDescription>
                 Show this product in the New Arrivals section on the home page.
               </AdminFieldDescription>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isFeaturedValue}
-                onClick={() => setValue("isFeatured", !isFeaturedValue)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 shrink-0 ${
-                  isFeaturedValue ? "bg-neutral-900" : "bg-neutral-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                    isFeaturedValue ? "translate-x-6" : "translate-x-1"
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isFeaturedValue}
+                  onClick={() => setValue("isFeatured", !isFeaturedValue)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 ${
+                    isFeaturedValue ? "bg-neutral-900" : "bg-neutral-200"
                   }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      isFeaturedValue ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-medium ${isFeaturedValue ? "text-neutral-900" : "text-neutral-400"}`}>
+                  {isFeaturedValue ? "Enabled" : "Disabled"}
+                </span>
+              </div>
               <AdminFieldError errors={[errors.isFeatured]} />
             </AdminField>
 
@@ -649,6 +799,24 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
           </AdminFieldSet>
         </AdminFieldGroup>
       </form>
+
+      {/* Image crop dialog — opens automatically for each selected file */}
+      <ImageCropDialog
+        open={!!activeCrop}
+        imageSrc={activeCrop?.src ?? null}
+        fileName={activeCrop?.name}
+        onClose={handleCropClose}
+        onCrop={handleCropConfirm}
+      />
+
+      {/* Re-crop dialog — opened by clicking the crop icon on an existing image */}
+      <ImageCropDialog
+        open={!!reCrop}
+        imageSrc={reCrop?.src ?? null}
+        fileName={reCrop?.name}
+        onClose={handleReCropClose}
+        onCrop={handleReCropConfirm}
+      />
     </div>
   );
 }

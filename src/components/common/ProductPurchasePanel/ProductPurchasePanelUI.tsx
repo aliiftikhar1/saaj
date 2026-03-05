@@ -57,16 +57,16 @@ export function ProductPurchasePanelUI(props: ProductPurchasePanelUIProps) {
   };
 
   return (
-    <div className="w-full lg:w-[40%] flex flex-col gap-8 lg:gap-10 lg:sticky lg:top-22 self-start">
+    <div className="w-full lg:w-1/2 flex flex-col gap-8 lg:gap-10 lg:sticky lg:top-22 self-start">
       <div className="flex flex-col gap-2">
         <AnimatedHeadingText text={product.name} variant="product-page-title" />
         <div className="flex items-baseline gap-2 pb-2">
           <h4 className="text-xl md:text-2xl font-medium">
-            ${product.price.toFixed(2)}
+            Rs.{product.price.toFixed(2)}
           </h4>
           {product.compareAtPrice && product.compareAtPrice > product.price && (
             <span className="text-base text-neutral-8 line-through">
-              ${product.compareAtPrice.toFixed(2)}
+              Rs.{product.compareAtPrice.toFixed(2)}
             </span>
           )}
         </div>

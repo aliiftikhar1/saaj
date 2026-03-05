@@ -1,12 +1,12 @@
 "use server";
 
 import { put } from "@vercel/blob";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { CategoryMutationInput, ServerActionResponse } from "@/types/server";
 import { adminRoutes, routes } from "@/lib/routing";
-import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
+import { BLOB_STORAGE_PREFIXES, CACHE_TAG_CATEGORY } from "@/lib/constants";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
 
@@ -54,6 +54,7 @@ export async function createCategory(
 
     revalidatePath(adminRoutes.categories);
     revalidatePath(routes.shop);
+    revalidateTag(CACHE_TAG_CATEGORY, "unstable_cache");
 
     return { id: created.id };
   });
@@ -91,6 +92,7 @@ export async function updateCategoryById(
 
     revalidatePath(adminRoutes.categories);
     revalidatePath(routes.shop);
+    revalidateTag(CACHE_TAG_CATEGORY, "unstable_cache");
 
     return { id: updated.id };
   });
@@ -114,6 +116,7 @@ export async function deleteCategoryById(
 
     revalidatePath(adminRoutes.categories);
     revalidatePath(routes.shop);
+    revalidateTag(CACHE_TAG_CATEGORY, "unstable_cache");
 
     return { id: deleted.id };
   });

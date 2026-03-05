@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { SiteContentMutationInput, ServerActionResponse } from "@/types/server";
+import { CACHE_TAG_SITE_CONTENT } from "@/lib/constants/cache-tags";
 import { adminRoutes, routes } from "@/lib/routing";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
@@ -29,6 +30,7 @@ export async function upsertSiteContent(
     revalidatePath(adminRoutes.siteContent);
     revalidatePath(routes.home);
     revalidatePath(routes.about);
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "unstable_cache");
 
     return { id: result.id };
   });
@@ -51,6 +53,7 @@ export async function updateSiteContentById(
     revalidatePath(adminRoutes.siteContent);
     revalidatePath(routes.home);
     revalidatePath(routes.about);
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "unstable_cache");
 
     return { id };
   });
@@ -76,6 +79,7 @@ export async function bulkUpdateSiteContent(
     revalidatePath(adminRoutes.siteContent);
     revalidatePath(routes.home);
     revalidatePath(routes.about);
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "unstable_cache");
 
     return { count: items.length };
   });
