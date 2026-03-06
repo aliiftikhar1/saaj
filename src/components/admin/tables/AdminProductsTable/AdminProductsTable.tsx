@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -43,6 +43,8 @@ export function AdminProductsTable({
 }: {
   products: ProductGetAllCounts[];
 }) {
+  const ITEMS_PER_PAGE = 10;
+
   // === HOOKS ===
   const router = useRouter();
 
@@ -54,6 +56,7 @@ export function AdminProductsTable({
   );
   const [productsState, setProductsState] = useState(products);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // === FUNCTIONS ===
   const deleteProduct = async (id: string) => {
@@ -83,10 +86,23 @@ export function AdminProductsTable({
   };
 
   // === MEMO ===
+  const searchLower = searchTerm.toLowerCase();
   const filteredProducts = formatProducts(
-    productsState.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    ),
+    productsState.filter((product) => {
+      if (!searchTerm) return true;
+      return (
+        product.name.toLowerCase().includes(searchLower) ||
+        product.slug?.toLowerCase().includes(searchLower) ||
+        product.categoryName?.toLowerCase().includes(searchLower) ||
+        product.description?.toLowerCase().includes(searchLower)
+      );
+    }),
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
   );
 
   return (
@@ -94,10 +110,13 @@ export function AdminProductsTable({
       <div className="flex justify-between items-center">
         <AdminInput
           type="text"
-          placeholder="Search for products"
+          placeholder="Search by name, category, slug or description…"
           className="my-3 max-w-lg"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
         />
         <Link
           href={adminRoutes.productsCreate}
@@ -140,7 +159,7 @@ export function AdminProductsTable({
         </div>
       </div>
       <AdminBaseTable
-        data={filteredProducts}
+        data={paginatedProducts}
         onRowClick={(row) => router.push(`${adminRoutes.products}/${row.id}/view`)}
         columns={[
           ...productColumns.filter((column) =>
@@ -221,6 +240,45 @@ export function AdminProductsTable({
           },
         ]}
       />
+
+      {/* === PAGINATION === */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 text-sm">
+          <span className="text-muted-foreground">
+            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length)} of{" "}
+            {filteredProducts.length} products
+          </span>
+          <div className="flex items-center gap-1">
+            <AdminButton
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </AdminButton>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <AdminButton
+                key={page}
+                variant={page === currentPage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </AdminButton>
+            ))}
+            <AdminButton
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </AdminButton>
+          </div>
+        </div>
+      )}
 
       {/* === DELETE CONFIRMATION MODAL === */}
       <AdminAlertDialog

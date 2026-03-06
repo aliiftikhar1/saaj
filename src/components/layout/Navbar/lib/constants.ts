@@ -6,6 +6,7 @@ export const SHOP_NAVBAR_TEXT = "Shop";
 export const ABOUT_NAVBAR_TEXT = "About";
 export const LOCATION_NAVBAR_TEXT = "Location";
 export const BLOG_NAVBAR_TEXT = "Blog";
+export const TRACK_NAVBAR_TEXT = "Track Order";
 
 type CollectionNavItem = {
   id: string;
@@ -73,6 +74,11 @@ export function getNavItems(
       id: "blog",
       text: BLOG_NAVBAR_TEXT,
       href: routes.blog,
+    },
+    {
+      id: "track",
+      text: TRACK_NAVBAR_TEXT,
+      href: routes.track,
     },
   ];
 }

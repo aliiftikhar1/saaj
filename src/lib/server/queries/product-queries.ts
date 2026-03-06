@@ -191,34 +191,51 @@ export async function getAllProductsWithTotalSold(): Promise<
 
 export async function getProductsByCategorySlug(
   categorySlug?: string,
-): Promise<ServerActionResponse<SerializedProduct[]>> {
+  page = 1,
+  pageSize = 12,
+): Promise<ServerActionResponse<{ products: SerializedProduct[]; total: number }>> {
   return wrapServerCall(async () => {
-    const products = await prisma.product.findMany({
-      where: categorySlug
-        ? { category: { slug: categorySlug }, isActive: true }
-        : { isActive: true },
-      include: { category: { select: { name: true, slug: true } } },
-    });
+    const where = categorySlug
+      ? { category: { slug: categorySlug }, isActive: true as const }
+      : { isActive: true as const };
 
-    return products.map(serializeProduct);
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: { category: { select: { name: true, slug: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return { products: products.map(serializeProduct), total };
   });
 }
 
 export async function getProductsByCollectionSlug(
   slug: string,
-): Promise<ServerActionResponse<SerializedProduct[]>> {
+  page = 1,
+  pageSize = 12,
+): Promise<ServerActionResponse<{ products: SerializedProduct[]; total: number }>> {
   return wrapServerCall(async () => {
-    const products = await prisma.product.findMany({
-      where: {
-        isActive: true,
-        collections: {
-          some: {
-            slug,
-          },
-        },
-      },
-    });
-    return products.map(serializeProduct);
+    const where = {
+      isActive: true as const,
+      collections: { some: { slug } },
+    };
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return { products: products.map(serializeProduct), total };
   });
 }
 

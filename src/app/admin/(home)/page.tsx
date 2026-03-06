@@ -36,8 +36,7 @@ export default async function Page() {
   return (
     <div>
       <AdminHeading heading="Admin Dashboard" />
-
-      <div className="mt-6">
+      <div className="mt-4">
         <AdminDashboardStats
           orderStats={orderStats.data}
           productStats={productStats.data}

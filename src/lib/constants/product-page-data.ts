@@ -15,6 +15,6 @@ export const PRODUCT_ACCORDION_ITEMS = [
     value: "item-3",
     trigger: "Shipping and Returns",
     content:
-      "We process and ship orders within a few business days, ensuring you get your items as soon as possible. Domestic orders typically arrive within a week, while international shipping times vary.",
+      "We process and ship orders within a few business days to ensure timely delivery. For returns or assistance, please Email us and we’ll be happy to help.",
   },
 ];

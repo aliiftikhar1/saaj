@@ -97,6 +97,7 @@ export async function sendOrderConfirmationEmails(
       trackingUrl: order.trackingToken
         ? `${STORE_URL}/track/${order.trackingToken}`
         : undefined,
+      trackingToken: order.trackingToken ?? undefined,
     };
 
     const customerEmail = order.deliveryEmail;

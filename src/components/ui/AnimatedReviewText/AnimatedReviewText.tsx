@@ -13,6 +13,23 @@ type AnimatedReviewTextProps = {
   animationTriggered?: boolean;
 };
 
+const wordVariant: Variants = {
+  hidden: {
+    opacity: 0.001,
+    filter: "blur(10px)",
+    y: 12,
+  },
+  visible: {
+    opacity: 1,
+    filter: "blur(0px)",
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeInOut",
+    },
+  },
+};
+
 export function AnimatedReviewText({
   text,
   className = "",
@@ -29,29 +46,11 @@ export function AnimatedReviewText({
   // === FUNCTIONS ===
   const words = text.split(" ");
 
-  // === FRAMER MOTION VARIANTS ===
   const container: Variants = {
     hidden: {},
     visible: {
       transition: {
         staggerChildren: wordStaggerDelay,
-      },
-    },
-  };
-
-  const word: Variants = {
-    hidden: {
-      opacity: 0.001,
-      filter: "blur(10px)",
-      y: 12,
-    },
-    visible: {
-      opacity: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeInOut",
       },
     },
   };
@@ -78,11 +77,10 @@ export function AnimatedReviewText({
         {words.map((wordText, wordIndex) => (
           <motion.span
             key={wordIndex}
-            variants={word}
+            variants={wordVariant}
             style={{
               display: "inline-block",
               marginRight: wordIndex < words.length - 1 ? "0.25rem" : "0",
-              willChange: "transform, opacity, filter",
             }}
           >
             {wordText}

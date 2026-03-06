@@ -435,11 +435,11 @@ export function AdminOrderView(props: AdminOrderViewProps) {
               </div>
               <div className="text-right shrink-0">
                 <p className="font-semibold text-sm md:text-base text-neutral-11">
-                  ${(item.unitPrice * item.quantity).toFixed(2)}
+                  Rs.{(item.unitPrice * item.quantity).toFixed(2)}
                 </p>
                 <p className="text-xs md:text-sm text-neutral-09">
                   <span>x{item.quantity + " "}</span>
-                  <span>${item.unitPrice.toFixed(2)}</span>
+                  <span>Rs.{item.unitPrice.toFixed(2)}</span>
                 </p>
               </div>
             </div>
@@ -450,7 +450,7 @@ export function AdminOrderView(props: AdminOrderViewProps) {
         <div className="border-t border-neutral-04 mt-4 pt-4 space-y-2">
           <div className="flex justify-between text-sm text-neutral-10">
             <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>Rs.{subtotal.toFixed(2)}</span>
           </div>
 
           {order.shippingAmount != null && (
@@ -459,7 +459,7 @@ export function AdminOrderView(props: AdminOrderViewProps) {
               <span>
                 {order.shippingAmount === 0
                   ? "Free"
-                  : `$${order.shippingAmount.toFixed(2)}`}
+                  : `Rs.${order.shippingAmount.toFixed(2)}`}
               </span>
             </div>
           )}
@@ -472,7 +472,7 @@ export function AdminOrderView(props: AdminOrderViewProps) {
               </span>
               <span>
                 {order.discountAmount
-                  ? `-$${order.discountAmount.toFixed(2)}`
+                  ? `-Rs.${order.discountAmount.toFixed(2)}`
                   : "—"}
               </span>
             </div>
@@ -481,7 +481,7 @@ export function AdminOrderView(props: AdminOrderViewProps) {
           <div className="flex justify-between pt-2 border-t border-neutral-04">
             <span className="text-base font-bold text-neutral-11">Total</span>
             <span className="text-xl md:text-2xl font-bold text-neutral-11">
-              ${order.totalPrice.toFixed(2)}
+              Rs.{order.totalPrice.toFixed(2)}
             </span>
           </div>
         </div>

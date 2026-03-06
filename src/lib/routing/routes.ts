@@ -10,6 +10,7 @@ export const routes = {
   cart: "/cart",
   checkout: "/checkout",
   checkoutSuccess: "/checkout/success",
+  track: "/track",
 };
 
 export const adminRoutes = {

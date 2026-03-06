@@ -161,7 +161,7 @@ export function AdminShippingForm({
                   </div>
                   <div className="col-span-2 text-right">
                     <span className="text-sm text-gray-600">
-                      ${product.price.toFixed(2)}
+                      Rs.{product.price.toFixed(2)}
                     </span>
                   </div>
                   <div className="col-span-4">
@@ -169,7 +169,7 @@ export function AdminShippingForm({
                       type="number"
                       min="0"
                       step="0.01"
-                      placeholder={`Global ($${globalRate.toFixed(2)})`}
+                      placeholder={`Global (Rs.${globalRate.toFixed(2)})`}
                       value={overrides[product.id] ?? ""}
                       onChange={(e) =>
                         setOverrides((prev) => ({

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { BLOB_STORAGE_PREFIXES } from "@/lib";
 import { cleanupUnusedBlobs } from "@/lib/utils";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /*
 
@@ -12,7 +12,18 @@ import { NextResponse } from "next/server";
 
 */
 
-export async function GET() {
+function isCronAuthorized(req: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  const auth = req.headers.get("authorization");
+  return auth === `Bearer ${cronSecret}`;
+}
+
+export async function GET(req: NextRequest) {
+  if (!isCronAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const results = {
       authors: { deleted: 0, errors: 0 },

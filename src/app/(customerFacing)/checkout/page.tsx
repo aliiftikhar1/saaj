@@ -79,15 +79,15 @@ export default async function CheckoutPage() {
     discount = {
       code: order.couponCode,
       percent: order.discountPercent,
-      amount: `$${discountAmt.toFixed(2)}`,
+      amount: `Rs.${discountAmt.toFixed(2)}`,
     };
-    summary.discountedTotal = `$${orderTotal.toFixed(2)}`;
+    summary.discountedTotal = `Rs.${orderTotal.toFixed(2)}`;
   }
 
   // === SHIPPING & TOTAL DISPLAY ===
   summary.shipping =
-    shippingAmount > 0 ? `$${shippingAmount.toFixed(2)}` : "Free";
-  summary.total = `$${orderTotal.toFixed(2)}`;
+    shippingAmount > 0 ? `Rs.${shippingAmount.toFixed(2)}` : "Free";
+  summary.total = `Rs.${orderTotal.toFixed(2)}`;
 
   return (
     <main>

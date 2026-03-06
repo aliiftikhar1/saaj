@@ -4,9 +4,8 @@ import Link from "next/link";
 import { cn } from "@/lib";
 import type { NavItemType } from "./types";
 
-import { CheveronRightIcon, CheveronLeftIcon } from "@/components";
+import { CheveronRightIcon, CheveronLeftIcon, CheckoutIcon } from "@/components";
 
-// === MOBILE MENU MAIN COMPONENT ===
 type NavbarMobileMenuProps = {
   showMobileMenu: boolean;
   setShowMobileMenu: (show: boolean) => void;
@@ -14,6 +13,8 @@ type NavbarMobileMenuProps = {
   setActiveSubMenu: (subMenu: string | null) => void;
   navItems: NavItemType[];
   isActive: (href: string) => boolean;
+  openSidebar: () => void;
+  itemCount: number;
 };
 
 export function NavbarMobileMenu({
@@ -23,6 +24,8 @@ export function NavbarMobileMenu({
   setActiveSubMenu,
   navItems,
   isActive,
+  openSidebar,
+  itemCount,
 }: NavbarMobileMenuProps) {
   const isSubMenuActive = activeSubMenu !== null;
   const activeSubItem = navItems.find((item) => item.id === activeSubMenu);
@@ -32,15 +35,12 @@ export function NavbarMobileMenu({
       {/* Backdrop overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+          "fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px] transition-opacity duration-300 md:hidden",
           showMobileMenu
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none",
         )}
-        onClick={() => {
-          setShowMobileMenu(false);
-          setActiveSubMenu(null);
-        }}
+        onClick={() => { setShowMobileMenu(false); setActiveSubMenu(null); }}
       />
 
       {/* Mobile menu panel */}
@@ -53,70 +53,78 @@ export function NavbarMobileMenu({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 h-[56px] border-b border-neutral-03/60">
+          <div className="flex items-center justify-between px-5 h-[54px] border-b border-neutral-03">
             {isSubMenuActive ? (
               <button
                 onClick={() => setActiveSubMenu(null)}
-                className="flex items-center gap-1 text-[13px] text-neutral-10 hover:text-neutral-12 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-[13px] text-neutral-09 hover:text-neutral-12 transition-colors cursor-pointer"
               >
                 <CheveronLeftIcon />
                 <span>Back</span>
               </button>
             ) : (
-              <span className="text-[13px] font-medium text-neutral-10 tracking-[-0.01em] uppercase">
-                Menu
-              </span>
+              <div className="flex flex-col">
+                <span
+                  className="text-[14px] font-semibold tracking-[0.02em] text-neutral-12"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  SAAJ
+                </span>
+                <span className="text-[7px] font-medium tracking-[0.2em] uppercase text-neutral-07 -mt-0.5">
+                  Tradition
+                </span>
+              </div>
             )}
             <button
-              onClick={() => {
-                setShowMobileMenu(false);
-                setActiveSubMenu(null);
-              }}
-              className="text-[13px] text-neutral-10 hover:text-neutral-12 transition-colors cursor-pointer"
+              onClick={() => { setShowMobileMenu(false); setActiveSubMenu(null); }}
+              className="text-[12px] font-medium text-neutral-08 hover:text-neutral-12 transition-colors cursor-pointer uppercase tracking-wider"
             >
               Close
             </button>
           </div>
 
           {/* Nav content */}
-          <div className="flex-1 overflow-y-auto py-2">
+          <div className="flex-1 overflow-y-auto py-3">
             {/* Root menu */}
             {!isSubMenuActive && (
               <div className="flex flex-col">
                 {navItems.map((item) => {
+                  const active = isActive(item.href);
                   if (item.subItems) {
                     return (
                       <button
                         key={item.id}
                         className={cn(
-                          "flex items-center justify-between w-full px-6 py-3.5 transition-colors cursor-pointer",
-                          isActive(item.href)
-                            ? "text-neutral-12"
-                            : "text-neutral-10 hover:text-neutral-12",
+                          "flex items-center justify-between w-full px-5 py-3.5 transition-all cursor-pointer",
+                          active
+                            ? "text-neutral-12 bg-neutral-02"
+                            : "text-neutral-09 hover:text-neutral-12 hover:bg-neutral-01",
                         )}
                         onClick={() => setActiveSubMenu(item.id)}
                       >
-                        <span className="text-[15px] tracking-[-0.02em] font-normal">
+                        <span className="text-[15px] tracking-[0.01em] font-medium">
                           {item.text}
                         </span>
                         <CheveronRightIcon />
                       </button>
                     );
                   }
-
                   return (
                     <Link
                       key={item.id}
                       href={item.href}
                       onClick={() => setShowMobileMenu(false)}
                       className={cn(
-                        "flex items-center px-6 py-3.5 transition-colors",
-                        isActive(item.href)
-                          ? "text-neutral-12"
-                          : "text-neutral-10 hover:text-neutral-12",
+                        "flex items-center px-5 py-3.5 transition-all",
+                        active
+                          ? "text-neutral-12 bg-neutral-02"
+                          : "text-neutral-09 hover:text-neutral-12 hover:bg-neutral-01",
                       )}
                     >
-                      <span className="text-[15px] tracking-[-0.02em] font-normal">
+                      {active && (
+                        <span className="w-[3px] h-4 rounded-full bg-[#c9a84c] mr-3 shrink-0" />
+                      )}
+                      <span className="text-[15px] tracking-[0.01em] font-medium">
                         {item.text}
                       </span>
                     </Link>
@@ -131,9 +139,9 @@ export function NavbarMobileMenu({
                 {activeSubItem.subItems.map((subItem, index) => (
                   <div key={subItem.id} className="flex flex-col">
                     {index > 0 && (
-                      <div className="mx-6 border-t border-neutral-03/60" />
+                      <div className="mx-5 border-t border-neutral-03" />
                     )}
-                    <p className="px-6 pt-4 pb-1 text-[11px] font-medium uppercase tracking-[0.04em] text-neutral-08">
+                    <p className="px-5 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#c9a84c]">
                       {subItem.text}
                     </p>
                     {subItem.items.map((item) => (
@@ -141,7 +149,7 @@ export function NavbarMobileMenu({
                         key={item.id}
                         href={item.href}
                         onClick={() => setShowMobileMenu(false)}
-                        className="px-6 py-3 text-[15px] tracking-[-0.02em] text-neutral-10 hover:text-neutral-12 transition-colors"
+                        className="px-5 py-3 text-[15px] tracking-[0.01em] text-neutral-09 hover:text-neutral-12 hover:bg-neutral-01 transition-all"
                       >
                         {item.text}
                       </Link>
@@ -150,6 +158,22 @@ export function NavbarMobileMenu({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Bottom: Cart button */}
+          <div className="border-t border-neutral-03 px-5 py-4">
+            <button
+              onClick={() => { setShowMobileMenu(false); openSidebar(); }}
+              className="w-full flex items-center justify-center gap-2.5 bg-neutral-12 text-white rounded-lg py-3 text-[13px] font-semibold tracking-wide hover:bg-neutral-11 transition-colors cursor-pointer"
+            >
+              <CheckoutIcon />
+              <span>View Cart</span>
+              {itemCount > 0 && (
+                <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#c9a84c] text-[10px] font-bold">
+                  {itemCount < 99 ? itemCount : "99+"}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>

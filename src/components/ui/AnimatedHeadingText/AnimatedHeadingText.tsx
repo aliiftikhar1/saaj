@@ -17,6 +17,40 @@ type AnimatedHeadingTextProps = {
   disableIsInView?: boolean;
 };
 
+const staggerValueMap: Record<string, number> = {
+  "home-screen": 0.03,
+  "product-page-title": 0.03,
+  "sub-page-title": 0.03,
+  "page-title": 0.01,
+};
+
+const containerVariants: Record<string, Variants> = Object.fromEntries(
+  Object.entries(staggerValueMap).map(([key, stagger]) => [
+    key,
+    {
+      hidden: {},
+      visible: { transition: { staggerChildren: stagger } },
+    },
+  ]),
+);
+
+const letterVariant: Variants = {
+  hidden: {
+    opacity: 0.001,
+    filter: "blur(10px)",
+    y: 12,
+  },
+  visible: {
+    opacity: 1,
+    filter: "blur(0px)",
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeInOut",
+    },
+  },
+};
+
 export function AnimatedHeadingText({
   text,
   variant = "page-title",
@@ -32,40 +66,6 @@ export function AnimatedHeadingText({
   // === FUNCTIONS ===
   const words = text.split(" ");
 
-  const staggerValueMap: { [key: string]: number } = {
-    "home-screen": 0.03,
-    "product-page-title": 0.03,
-    "sub-page-title": 0.03,
-    "page-title": 0.01,
-  };
-
-  // === FRAMER MOTION VARIANTS ===
-  const container: Variants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: staggerValueMap[variant],
-      },
-    },
-  };
-
-  const letter: Variants = {
-    hidden: {
-      opacity: 0.001,
-      filter: "blur(10px)",
-      y: 12,
-    },
-    visible: {
-      opacity: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeInOut",
-      },
-    },
-  };
-
   return (
     <>
       <h3 className="sr-only">{text}</h3>
@@ -80,7 +80,7 @@ export function AnimatedHeadingText({
           variant === "home-screen" && "text-4xl! md:text-5xl! xl:text-6xl",
           variant === "sub-page-title" && "text-2xl md:text-3xl lg:text-4xl",
         )}
-        variants={container}
+        variants={containerVariants[variant]}
         initial="hidden"
         animate={disableIsInView ? "visible" : isInView ? "visible" : "hidden"}
         aria-hidden="true"
@@ -90,11 +90,8 @@ export function AnimatedHeadingText({
             {word.split("").map((char, charIndex) => (
               <motion.span
                 key={`${wordIndex}-${charIndex}`}
-                variants={letter}
-                style={{
-                  display: "inline-block",
-                  willChange: "transform, opacity, filter",
-                }}
+                variants={letterVariant}
+                style={{ display: "inline-block" }}
               >
                 {char}
               </motion.span>

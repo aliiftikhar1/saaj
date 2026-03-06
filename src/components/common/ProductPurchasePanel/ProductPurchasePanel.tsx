@@ -22,7 +22,7 @@ export function ProductPurchasePanel(props: ProductPurchasePanelProps) {
 
   // === CONTEXT ===
   const { showDialog } = useCartDialog();
-  const { refreshCartCount } = useCartCount();
+  const { setItemCount } = useCartCount();
 
   // === FUNCTIONS ===
   const handleAddToCart = async (sizeId: string, sizeLabel: string) => {
@@ -40,6 +40,9 @@ export function ProductPurchasePanel(props: ProductPurchasePanelProps) {
         return;
       }
 
+      // Update cart count directly from the response instead of a separate server call
+      setItemCount(result.data.quantity);
+
       showDialog({
         productName: product.name,
         price: product.price.toString(),
@@ -51,7 +54,6 @@ export function ProductPurchasePanel(props: ProductPurchasePanelProps) {
       setIsError(false);
     } finally {
       setIsLoading(false);
-      refreshCartCount();
     }
   };
 

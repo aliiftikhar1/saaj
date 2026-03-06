@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -20,7 +20,18 @@ Since this is a mock store running on a Vercel Hobby plan, the job is configured
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
-export async function GET() {
+function isCronAuthorized(req: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  const auth = req.headers.get("authorization");
+  return auth === `Bearer ${cronSecret}`;
+}
+
+export async function GET(req: NextRequest) {
+  if (!isCronAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const now = Date.now();
     const checkoutStaleThreshold = new Date(now - FIFTEEN_MINUTES_MS);

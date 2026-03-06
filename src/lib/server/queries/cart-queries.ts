@@ -17,9 +17,9 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
       return {
         items: [],
         summary: {
-          subtotal: "$0.00",
+          subtotal: "Rs.0.00",
           shipping: "Free",
-          total: "$0.00",
+          total: "Rs.0.00",
           itemCount: 0,
         },
       };
@@ -37,9 +37,9 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
       return {
         items: [],
         summary: {
-          subtotal: "$0.00",
+          subtotal: "Rs.0.00",
           shipping: "Free",
-          total: "$0.00",
+          total: "Rs.0.00",
           itemCount: 0,
         },
       };

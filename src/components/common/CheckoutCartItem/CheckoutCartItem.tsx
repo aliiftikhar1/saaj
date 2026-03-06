@@ -36,7 +36,7 @@ export function CheckoutCartItem(props: CheckoutCartItemProps) {
 
       {/* Price */}
       <div className="text-base font-medium text-neutral-12 shrink-0">
-        ${itemTotal}
+        Rs.{itemTotal}
       </div>
     </div>
   );

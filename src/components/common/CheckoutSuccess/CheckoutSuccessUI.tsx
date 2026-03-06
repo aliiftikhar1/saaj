@@ -54,6 +54,10 @@ export function CheckoutSuccessUI(props: CheckoutSuccessUIProps) {
           Go Home
         </Link>
       </div>
+
+      <p className="text-xs text-neutral-07 mt-2">
+        Redirecting to shop in a few seconds...
+      </p>
     </div>
   );
 }

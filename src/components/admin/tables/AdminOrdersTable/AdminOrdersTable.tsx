@@ -88,12 +88,24 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
   };
 
   // === MEMO ===
+  const searchLower = searchTerm.toLowerCase();
   const filteredOrders = formatOrders(
-    ordersState.filter(
-      (order) =>
-        order.deliveryEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.orderNumber.toString().includes(searchTerm),
-    ),
+    ordersState.filter((order) => {
+      if (!searchTerm) return true;
+      const productTitles = order.cart.items.map((i) => i.title.toLowerCase()).join(" ");
+      return (
+        order.orderNumber.toString().includes(searchTerm) ||
+        order.deliveryEmail?.toLowerCase().includes(searchLower) ||
+        order.delieveryName?.toLowerCase().includes(searchLower) ||
+        order.deliveryPhone?.toLowerCase().includes(searchLower) ||
+        order.deliveryCity?.toLowerCase().includes(searchLower) ||
+        order.couponCode?.toLowerCase().includes(searchLower) ||
+        order.trackingToken?.toLowerCase().includes(searchLower) ||
+        order.status.toLowerCase().includes(searchLower) ||
+        order.paymentStatus.toLowerCase().includes(searchLower) ||
+        productTitles.includes(searchLower)
+      );
+    }),
   );
 
   return (
@@ -101,7 +113,7 @@ export function AdminOrdersTable(props: AdminOrdersTableProps) {
       <div className="flex justify-between items-center">
         <AdminInput
           type="text"
-          placeholder="Search by email or order number"
+          placeholder="Search by order #, name, email, phone, city, tracking ID, product, status…"
           className="my-3 max-w-lg"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

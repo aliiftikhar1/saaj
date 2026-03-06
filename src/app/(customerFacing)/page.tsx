@@ -42,22 +42,20 @@ export default async function HomePage() {
   // Ensure all site content defaults (including marquee) exist in DB
   await seedSiteContentDefaults();
 
-  // === QUERIES ===
-  const products = await getFeaturedProducts();
+  // === QUERIES (parallel) ===
+  const [products, blogPostsResponse, collectionsResponse, contentMapResponse, testimonialsResponse] =
+    await Promise.all([
+      getFeaturedProducts(),
+      getHomePageBlogs(),
+      getCollections(),
+      getSiteContentMap(),
+      getActiveTestimonials(),
+    ]);
+
   const productsList = products.success ? products.data : [];
-
-  const blogPostsResponse = await getHomePageBlogs();
   const blogPosts = blogPostsResponse.success ? blogPostsResponse.data : [];
-
-  const collectionsResponse = await getCollections();
-  const collections = collectionsResponse.success
-    ? collectionsResponse.data
-    : [];
-
-  const contentMapResponse = await getSiteContentMap();
+  const collections = collectionsResponse.success ? collectionsResponse.data : [];
   const c = contentMapResponse.success ? contentMapResponse.data : {};
-
-  const testimonialsResponse = await getActiveTestimonials();
   const testimonials = (
     testimonialsResponse.success ? testimonialsResponse.data : []
   ).map((t) => ({

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { routes } from "@/lib/routing/routes";
+import { getSiteContentMap } from "@/lib/server/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,6 @@ async function getOrderByToken(token: string) {
       updatedAt: true,
       delieveryName: true,
       deliveryEmail: true,
-      // No deliveryPhone — excluded intentionally
       deliveryStreetAddress: true,
       deliveryCity: true,
       deliveryState: true,
@@ -58,18 +59,18 @@ async function getOrderByToken(token: string) {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; bg: string; color: string; step: number }
+  { label: string; badgeClass: string; step: number }
 > = {
-  PENDING:    { label: "Order Placed",   bg: "#fef3c7", color: "#92400e", step: 1 },
-  PAID:       { label: "Payment Confirmed", bg: "#d1fae5", color: "#065f46", step: 2 },
-  PROCESSING: { label: "Processing",     bg: "#dbeafe", color: "#1e40af", step: 2 },
-  SHIPPED:    { label: "Shipped",        bg: "#ede9fe", color: "#5b21b6", step: 3 },
-  DELIVERED:  { label: "Delivered",      bg: "#d1fae5", color: "#065f46", step: 4 },
-  CANCELLED:  { label: "Cancelled",      bg: "#fee2e2", color: "#991b1b", step: 0 },
-  REFUNDED:   { label: "Refunded",       bg: "#f3f4f6", color: "#374151", step: 0 },
+  PENDING:    { label: "Order Placed",       badgeClass: "bg-amber-50 text-amber-800",   step: 1 },
+  PAID:       { label: "Payment Confirmed",  badgeClass: "bg-emerald-50 text-emerald-700", step: 2 },
+  PROCESSING: { label: "Processing",         badgeClass: "bg-blue-50 text-blue-800",     step: 2 },
+  SHIPPED:    { label: "Shipped",            badgeClass: "bg-violet-50 text-violet-800", step: 3 },
+  DELIVERED:  { label: "Delivered",          badgeClass: "bg-emerald-50 text-emerald-700", step: 4 },
+  CANCELLED:  { label: "Cancelled",          badgeClass: "bg-red-50 text-red-700",       step: 0 },
+  REFUNDED:   { label: "Refunded",           badgeClass: "bg-neutral-100 text-neutral-600", step: 0 },
 };
 
-const ESTIMATED_DELIVERY: Record<string, string> = {
+const FALLBACK_DELIVERY: Record<string, string> = {
   PENDING:    "7–10 business days",
   PAID:       "5–7 business days",
   PROCESSING: "5–7 business days",
@@ -79,20 +80,31 @@ const ESTIMATED_DELIVERY: Record<string, string> = {
   REFUNDED:   "—",
 };
 
+function getEstimatedDelivery(status: string, siteContent: Record<string, string>): string {
+  if (status === "DELIVERED") return "Delivered";
+  if (status === "CANCELLED" || status === "REFUNDED") return "—";
+  const key = `delivery_estimate_${status.toLowerCase()}`;
+  return siteContent[key] || FALLBACK_DELIVERY[status] || "—";
+}
+
 const STEPS = ["Order Placed", "Processing", "Shipped", "Delivered"];
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default async function OrderTrackingPage({ params }: Props) {
   const { token } = await params;
-  const order = await getOrderByToken(token);
+  const [order, siteContentResult] = await Promise.all([
+    getOrderByToken(token),
+    getSiteContentMap(),
+  ]);
 
   if (!order) {
     notFound();
   }
 
+  const siteContent = siteContentResult.success ? siteContentResult.data : {};
   const statusCfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG["PENDING"];
-  const estimatedDelivery = ESTIMATED_DELIVERY[order.status] ?? "—";
+  const estimatedDelivery = getEstimatedDelivery(order.status, siteContent);
   const isCancelled = order.status === "CANCELLED" || order.status === "REFUNDED";
 
   const total = Number(order.totalPrice);
@@ -106,77 +118,63 @@ export default async function OrderTrackingPage({ params }: Props) {
   const hasAddress = order.delieveryName || order.deliveryStreetAddress;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8f5f0", fontFamily: "Arial, sans-serif" }}>
-      {/* ── Header ── */}
-      <div style={{ background: "#1a1a2e", padding: "20px 24px", textAlign: "center" }}>
-        <p style={{ color: "#8888aa", fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", margin: "0 0 6px" }}>
-          Saaj Tradition
-        </p>
-        <h1 style={{ color: "#c9a84c", fontSize: "20px", margin: 0, fontWeight: 700 }}>
-          Order Tracker
-        </h1>
-        <p style={{ color: "#8888aa", fontSize: "12px", margin: "6px 0 0" }}>
-          Order #{order.orderNumber} · {new Date(order.createdAt).toLocaleDateString("en-PK", { year: "numeric", month: "long", day: "numeric" })}
-        </p>
-      </div>
-
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "24px 16px" }}>
-
-        {/* ── Current Status Badge ── */}
-        <div style={{ background: "#fff", borderRadius: "12px", padding: "24px", marginBottom: "16px", boxShadow: "0 1px 8px rgba(0,0,0,.06)", textAlign: "center" }}>
-          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "#999", margin: "0 0 12px" }}>
-            Current Status
+    <main className="min-h-[80vh] bg-neutral-01 py-10 md:py-16 px-4 sm:px-6">
+      <div className="mx-auto max-w-2xl space-y-4">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <p className="text-[11px] uppercase tracking-[3px] text-neutral-08 mb-2">Saaj Tradition</p>
+          <h1 className="text-2xl md:text-3xl font-semibold text-neutral-12 tracking-tight">Order Tracker</h1>
+          <p className="text-neutral-08 text-xs mt-2">
+            Order #{order.orderNumber} · {new Date(order.createdAt).toLocaleDateString("en-PK", { year: "numeric", month: "long", day: "numeric" })}
           </p>
-          <span style={{
-            display: "inline-block",
-            padding: "10px 28px",
-            borderRadius: "24px",
-            fontSize: "15px",
-            fontWeight: 700,
-            letterSpacing: "1px",
-            textTransform: "uppercase",
-            background: statusCfg.bg,
-            color: statusCfg.color,
-          }}>
+        </div>
+
+        {/* Status Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-[0_1px_8px_rgba(0,0,0,0.04)] text-center">
+          <p className="text-[10px] uppercase tracking-[2px] text-neutral-08 mb-3">Current Status</p>
+          <span className={`inline-block px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide ${statusCfg.badgeClass}`}>
             {statusCfg.label}
           </span>
 
           {!isCancelled && (
-            <p style={{ color: "#888", fontSize: "13px", marginTop: "14px" }}>
-              🚚 Estimated delivery: <strong>{estimatedDelivery}</strong>
+            <p className="text-neutral-09 text-xs mt-4">
+              Estimated delivery: <span className="font-medium text-neutral-11">{estimatedDelivery}</span>
             </p>
           )}
 
-          <p style={{ color: "#bbb", fontSize: "11px", marginTop: "8px" }}>
+          <p className="text-neutral-06 text-[10px] mt-2">
             Last updated: {new Date(order.updatedAt).toLocaleDateString("en-PK", { year: "numeric", month: "short", day: "numeric" })} at {new Date(order.updatedAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
 
-        {/* ── Progress Steps ── */}
+        {/* Progress Steps */}
         {!isCancelled && (
-          <div style={{ background: "#fff", borderRadius: "12px", padding: "20px 24px", marginBottom: "16px", boxShadow: "0 1px 8px rgba(0,0,0,.06)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
-              {/* connector line */}
-              <div style={{ position: "absolute", top: "14px", left: "12%", right: "12%", height: "2px", background: "#f0ece8", zIndex: 0 }} />
-              <div style={{ position: "absolute", top: "14px", left: "12%", width: `${Math.max(0, (statusCfg.step - 1) / 3 * 76)}%`, height: "2px", background: "#c9a84c", zIndex: 1, transition: "width 0.5s" }} />
+          <div className="bg-white rounded-2xl p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+            <div className="flex justify-between items-start relative">
+              <div className="absolute top-3.5 left-[12%] right-[12%] h-0.5 bg-neutral-03" />
+              <div
+                className="absolute top-3.5 left-[12%] h-0.5 bg-neutral-12 transition-all duration-500"
+                style={{ width: `${Math.max(0, (statusCfg.step - 1) / 3 * 76)}%` }}
+              />
 
               {STEPS.map((label, idx) => {
                 const stepNum = idx + 1;
                 const done = stepNum < statusCfg.step;
                 const active = stepNum === statusCfg.step;
                 return (
-                  <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, position: "relative", zIndex: 2 }}>
-                    <div style={{
-                      width: "28px", height: "28px", borderRadius: "50%",
-                      background: done ? "#c9a84c" : active ? "#e94560" : "#e5e7eb",
-                      color: (done || active) ? "#fff" : "#9ca3af",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "12px", fontWeight: 700,
-                      boxShadow: active ? "0 0 0 4px rgba(233,69,96,.15)" : "none",
-                    }}>
+                  <div key={label} className="flex flex-col items-center flex-1 relative z-10">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
+                      done
+                        ? "bg-neutral-12 text-white"
+                        : active
+                        ? "bg-neutral-12 text-white ring-4 ring-neutral-12/10"
+                        : "bg-neutral-03 text-neutral-07"
+                    }`}>
                       {done ? "✓" : stepNum}
                     </div>
-                    <p style={{ fontSize: "10px", color: active ? "#e94560" : done ? "#c9a84c" : "#9ca3af", marginTop: "6px", textAlign: "center", fontWeight: (done || active) ? 700 : 400, lineHeight: 1.3 }}>
+                    <p className={`text-[10px] mt-1.5 text-center leading-tight ${
+                      done || active ? "font-semibold text-neutral-12" : "text-neutral-07"
+                    }`}>
                       {label}
                     </p>
                   </div>
@@ -186,28 +184,26 @@ export default async function OrderTrackingPage({ params }: Props) {
           </div>
         )}
 
-        {/* ── Items ── */}
-        <div style={{ background: "#fff", borderRadius: "12px", padding: "20px 24px", marginBottom: "16px", boxShadow: "0 1px 8px rgba(0,0,0,.06)" }}>
-          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a2e", letterSpacing: "1px", textTransform: "uppercase", margin: "0 0 16px" }}>
-            Items Ordered
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {/* Items */}
+        <div className="bg-white rounded-2xl p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-12 mb-4">Items Ordered</h2>
+          <div className="space-y-3">
             {order.cart.items.map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", paddingBottom: "12px", borderBottom: i < order.cart.items.length - 1 ? "1px solid #f0ece8" : "none" }}>
+              <div key={i} className={`flex gap-3 items-center pb-3 ${i < order.cart.items.length - 1 ? "border-b border-neutral-03" : ""}`}>
                 {item.image && (
                   <Image
                     src={item.image}
                     alt={item.title}
-                    width={56}
-                    height={56}
-                    style={{ width: "56px", height: "56px", objectFit: "cover", borderRadius: "8px", flexShrink: 0 }}
+                    width={52}
+                    height={52}
+                    className="w-13 h-13 object-cover rounded-lg shrink-0"
                   />
                 )}
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a2e", margin: "0 0 4px" }}>{item.title}</p>
-                  <p style={{ fontSize: "12px", color: "#888", margin: "0 0 2px" }}>Size: {item.size.label} · Qty: {item.quantity}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-12 truncate">{item.title}</p>
+                  <p className="text-xs text-neutral-08">Size: {item.size.label} · Qty: {item.quantity}</p>
                 </div>
-                <p style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a2e", margin: 0, flexShrink: 0 }}>
+                <p className="text-sm font-semibold text-neutral-12 shrink-0">
                   Rs. {(Number(item.unitPrice) * item.quantity).toLocaleString("en-PK")}
                 </p>
               </div>
@@ -215,43 +211,43 @@ export default async function OrderTrackingPage({ params }: Props) {
           </div>
 
           {/* Totals */}
-          <div style={{ marginTop: "16px", borderTop: "2px solid #f0ece8", paddingTop: "12px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#888", marginBottom: "6px" }}>
-              <span>Subtotal</span><span>Rs. {subtotal.toLocaleString("en-PK")}</span>
+          <div className="mt-4 pt-3 border-t border-neutral-03 space-y-1.5">
+            <div className="flex justify-between text-xs text-neutral-08">
+              <span>Subtotal</span>
+              <span>Rs. {subtotal.toLocaleString("en-PK")}</span>
             </div>
             {shipping > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#888", marginBottom: "6px" }}>
-                <span>Shipping</span><span>Rs. {shipping.toLocaleString("en-PK")}</span>
+              <div className="flex justify-between text-xs text-neutral-08">
+                <span>Shipping</span>
+                <span>Rs. {shipping.toLocaleString("en-PK")}</span>
               </div>
             )}
             {discount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#16a34a", marginBottom: "6px" }}>
+              <div className="flex justify-between text-xs text-green-600">
                 <span>Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
                 <span>−Rs. {discount.toLocaleString("en-PK")}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: 700, color: "#1a1a2e", marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #eee" }}>
+            <div className="flex justify-between text-base font-bold text-neutral-12 pt-2 border-t border-neutral-03">
               <span>Total</span>
-              <span style={{ color: "#e94560" }}>Rs. {total.toLocaleString("en-PK")}</span>
+              <span>Rs. {total.toLocaleString("en-PK")}</span>
             </div>
           </div>
         </div>
 
-        {/* ── Customer & Delivery Info ── */}
-        <div style={{ background: "#fff", borderRadius: "12px", padding: "20px 24px", marginBottom: "16px", boxShadow: "0 1px 8px rgba(0,0,0,.06)" }}>
-          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a2e", letterSpacing: "1px", textTransform: "uppercase", margin: "0 0 16px" }}>
-            Delivery Details
-          </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        {/* Customer & Delivery Info */}
+        <div className="bg-white rounded-2xl p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-12 mb-3">Delivery Details</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p style={{ fontSize: "10px", color: "#c9a84c", letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 4px", fontWeight: 700 }}>Customer</p>
-              <p style={{ fontSize: "14px", color: "#333", margin: 0 }}>{order.delieveryName || "—"}</p>
-              <p style={{ fontSize: "13px", color: "#888", margin: "4px 0 0" }}>{order.deliveryEmail || "—"}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[1.5px] text-neutral-08 mb-1">Customer</p>
+              <p className="text-sm font-medium text-neutral-12">{order.delieveryName || "—"}</p>
+              <p className="text-xs text-neutral-08 mt-0.5">{order.deliveryEmail || "—"}</p>
             </div>
             {hasAddress && (
               <div>
-                <p style={{ fontSize: "10px", color: "#c9a84c", letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 4px", fontWeight: 700 }}>Ship To</p>
-                <p style={{ fontSize: "13px", color: "#555", margin: 0, lineHeight: 1.7 }}>
+                <p className="text-[10px] font-bold uppercase tracking-[1.5px] text-neutral-08 mb-1">Ship To</p>
+                <p className="text-xs text-neutral-09 leading-relaxed">
                   {[
                     order.deliveryStreetAddress,
                     order.deliveryCity,
@@ -265,16 +261,16 @@ export default async function OrderTrackingPage({ params }: Props) {
           </div>
         </div>
 
-        {/* ── Footer ── */}
-        <div style={{ textAlign: "center", padding: "16px 0" }}>
-          <p style={{ fontSize: "12px", color: "#bbb", margin: "0 0 8px" }}>
-            This page updates automatically when your order status changes.
+        {/* Footer */}
+        <div className="text-center pt-2">
+          <p className="text-xs text-neutral-07 mb-3">
+            This page shows real-time status. Check back for updates.
           </p>
-          <Link href="/" style={{ fontSize: "13px", color: "#e94560", textDecoration: "none", fontWeight: 600 }}>
+          <Link href={routes.shop} className="text-xs font-medium text-neutral-12 hover:opacity-70 transition-opacity">
             ← Continue Shopping
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

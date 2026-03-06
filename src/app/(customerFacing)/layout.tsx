@@ -21,7 +21,10 @@ export default async function CustomerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const collectionsResponse = await getCollections();
+  const [collectionsResponse, contentMapRes] = await Promise.all([
+    getCollections(),
+    getSiteContentMap(),
+  ]);
   const collections = collectionsResponse.success
     ? collectionsResponse.data.map((c) => ({
         id: c.id,
@@ -30,7 +33,6 @@ export default async function CustomerLayout({
       }))
     : [];
 
-  const contentMapRes = await getSiteContentMap();
   const cm = contentMapRes.success ? contentMapRes.data : {};
   const footerEmail = cm.social_email || STORE_EMAIL;
   const footerInstagram = cm.social_instagram || STORE_INSTAGRAM;

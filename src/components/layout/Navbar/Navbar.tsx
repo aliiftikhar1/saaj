@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { NavbarUI } from "./NavbarUI";
 import { useCartCount } from "@/providers";
@@ -10,12 +10,14 @@ type NavbarProps = {
 };
 
 export function Navbar({ collections = [] }: NavbarProps) {
-  // === CART CONTEXT ===
   const { itemCount, refreshCartCount } = useCartCount();
+  const hasFetched = useRef(false);
 
-  // === EFFECTS ===
   useEffect(() => {
-    refreshCartCount();
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      refreshCartCount();
+    }
   }, [refreshCartCount]);
 
   return <NavbarUI itemCount={itemCount} collections={collections} />;

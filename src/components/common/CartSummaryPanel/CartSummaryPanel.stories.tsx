@@ -35,9 +35,9 @@ const checkoutBtnProps = {
 export const Default: Story = {
   args: {
     summary: {
-      subtotal: "$1,234.56",
-      shipping: "$15.00",
-      total: "$1,249.56",
+      subtotal: "Rs.1,234.56",
+      shipping: "Rs.15.00",
+      total: "Rs.1,249.56",
       itemCount: 5,
     },
     checkoutButton: <CheckoutButtonUI {...checkoutBtnProps} />,
@@ -47,9 +47,9 @@ export const Default: Story = {
 export const SmallOrder: Story = {
   args: {
     summary: {
-      subtotal: "$29.99",
-      shipping: "$8.00",
-      total: "$37.99",
+      subtotal: "Rs.29.99",
+      shipping: "Rs.8.00",
+      total: "Rs.37.99",
       itemCount: 1,
     },
     checkoutButton: <CheckoutButtonUI {...checkoutBtnProps} />,
@@ -59,9 +59,9 @@ export const SmallOrder: Story = {
 export const FreeShipping: Story = {
   args: {
     summary: {
-      subtotal: "$495.00",
+      subtotal: "Rs.495.00",
       shipping: "Free",
-      total: "$495.00",
+      total: "Rs.495.00",
       itemCount: 2,
     },
     checkoutButton: <CheckoutButtonUI {...checkoutBtnProps} />,
@@ -71,9 +71,9 @@ export const FreeShipping: Story = {
 export const LargeOrder: Story = {
   args: {
     summary: {
-      subtotal: "$12,459.99",
-      shipping: "$25.00",
-      total: "$12,484.99",
+      subtotal: "Rs.12,459.99",
+      shipping: "Rs.25.00",
+      total: "Rs.12,484.99",
       itemCount: 25,
     },
     checkoutButton: <CheckoutButtonUI {...checkoutBtnProps} />,
@@ -83,9 +83,9 @@ export const LargeOrder: Story = {
 export const Loading: Story = {
   args: {
     summary: {
-      subtotal: "$12,459.99",
-      shipping: "$25.00",
-      total: "$12,484.99",
+      subtotal: "Rs.12,459.99",
+      shipping: "Rs.25.00",
+      total: "Rs.12,484.99",
       itemCount: 25,
     },
     checkoutButton: <CheckoutButtonUI {...checkoutBtnProps} isLoading={true} />,

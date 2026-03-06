@@ -128,7 +128,16 @@ export type SendOrderConfirmationInput = {
   };
   orderId: string;
   trackingUrl?: string;
+  trackingToken?: string;
 };
+
+function buildTrackingIdRow(trackingToken?: string): string {
+  if (!trackingToken) return "";
+  return `<tr><td style="padding:8px 16px;text-align:center;border-top:1px solid rgba(255,255,255,0.1);" colspan="3">
+    <p style="font-size:10px;font-weight:700;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:4px;">Tracking ID</p>
+    <p style="font-size:13px;font-weight:600;color:#fff;font-family:monospace;letter-spacing:1px;word-break:break-all;">${trackingToken}</p>
+  </td></tr>`;
+}
 
 export async function sendOrderConfirmationEmail(input: SendOrderConfirmationInput) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
@@ -178,6 +187,7 @@ export async function sendOrderConfirmationEmail(input: SendOrderConfirmationInp
     storeEmail: STORE_EMAIL,
     adminOrderUrl: `${STORE_URL}/admin/orders/${input.orderId}`,
     trackingUrl: input.trackingUrl ?? STORE_URL,
+    trackingIdRow: buildTrackingIdRow(input.trackingToken),
   };
 
   await transporter.sendMail({
@@ -237,6 +247,7 @@ export async function sendAdminOrderNotificationEmail(input: SendOrderConfirmati
     storeUrl: STORE_URL,
     storeEmail: STORE_EMAIL,
     trackingUrl: input.trackingUrl ?? STORE_URL,
+    trackingIdRow: buildTrackingIdRow(input.trackingToken),
   };
 
   await transporter.sendMail({

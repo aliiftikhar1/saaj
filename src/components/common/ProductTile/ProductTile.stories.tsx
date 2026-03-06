@@ -26,7 +26,7 @@ const meta = {
     },
     price: {
       control: { type: "number", min: 0, step: 0.01 },
-      description: "Product price in dollars",
+      description: "Product price in PKR",
     },
     primaryImageUrl: {
       control: "text",

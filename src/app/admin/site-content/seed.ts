@@ -276,6 +276,31 @@ const SITE_CONTENT_DEFAULTS: SiteContentDefault[] = [
     label: "Shipping Charge (e.g. 10.00, set 0 for free shipping)",
     group: "shipping",
   },
+  // === Estimated Delivery Days ===
+  {
+    key: "delivery_estimate_pending",
+    value: "7–10 business days",
+    label: "Estimated delivery for Pending orders",
+    group: "delivery-estimates",
+  },
+  {
+    key: "delivery_estimate_paid",
+    value: "5–7 business days",
+    label: "Estimated delivery for Paid orders",
+    group: "delivery-estimates",
+  },
+  {
+    key: "delivery_estimate_processing",
+    value: "5–7 business days",
+    label: "Estimated delivery for Processing orders",
+    group: "delivery-estimates",
+  },
+  {
+    key: "delivery_estimate_shipped",
+    value: "2–4 business days",
+    label: "Estimated delivery for Shipped orders",
+    group: "delivery-estimates",
+  },
   // === Announcement Marquee ===
   {
     key: "announcement_active",

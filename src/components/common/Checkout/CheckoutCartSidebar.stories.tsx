@@ -61,9 +61,9 @@ const baseItems = [
 ];
 
 const baseSummary = {
-  subtotal: "$179.48",
-  shipping: "$12.00",
-  total: "$191.48",
+  subtotal: "Rs.179.48",
+  shipping: "Rs.12.00",
+  total: "Rs.191.48",
   itemCount: 3,
 };
 
@@ -78,9 +78,9 @@ export const SingleItem: Story = {
   args: {
     items: [baseItems[0]],
     summary: {
-      subtotal: "$79.50",
-      shipping: "$8.00",
-      total: "$87.50",
+      subtotal: "Rs.79.50",
+      shipping: "Rs.8.00",
+      total: "Rs.87.50",
       itemCount: 1,
     },
   },
@@ -90,9 +90,9 @@ export const FreeShipping: Story = {
   args: {
     items: baseItems,
     summary: {
-      subtotal: "$199.00",
+      subtotal: "Rs.199.00",
       shipping: "Free",
-      total: "$199.00",
+      total: "Rs.199.00",
       itemCount: 3,
     },
   },

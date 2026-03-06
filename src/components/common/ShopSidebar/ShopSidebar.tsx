@@ -17,12 +17,13 @@ export const linkClasses =
 
 type ShopSideBarProps = {
   collections: { name: string; slug: string }[];
+  categories?: { name: string; slug: string }[];
   collectionsOpenByDefault?: boolean;
 };
 
 export function ShopSidebar(props: ShopSideBarProps) {
   // === PROPS ===
-  const { collections = [], collectionsOpenByDefault = false } = props;
+  const { collections = [], categories = [], collectionsOpenByDefault = false } = props;
 
   return (
     <aside className="flex flex-col w-full md:w-64 shrink-0 divide-y divide-neutral-6 md:sticky md:top-30 self-start">
@@ -35,6 +36,33 @@ export function ShopSidebar(props: ShopSideBarProps) {
       >
         New Arrivals
       </Link>
+      {categories.length > 0 && (
+        <Accordion
+          collapsible
+          type="single"
+          className="w-full"
+        >
+          <AccordionItem value="categories" className="border-b-0">
+            <AccordionTrigger
+              className={cn(
+                linkClasses,
+                "pt-3 hover:no-underline text-base! [&[data-state=open]>svg]:rotate-180",
+              )}
+            >
+              Categories
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-3 pl-1 pt-0">
+              {categories.map((category, index) => (
+                <ShopSidebarCollectionItem
+                  key={index}
+                  href={`${routes.shop}/categories/${category.slug}`}
+                  label={category.name}
+                />
+              ))}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       <Accordion
         defaultValue={collectionsOpenByDefault ? "collections" : undefined}
         collapsible

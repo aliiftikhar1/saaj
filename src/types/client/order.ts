@@ -50,6 +50,7 @@ export type OrderWithCart = {
   discountPercent: number | null;
   discountAmount: number | null;
   orderNote: string | null;
+  trackingToken: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
@@ -110,9 +111,21 @@ export type GetAdminOrder = {
   };
 };
 
+export type DashboardRecentOrder = {
+  id: string;
+  orderNumber: number;
+  delieveryName: string | null;
+  deliveryEmail: string | null;
+  totalPrice: number;
+  status: string;
+  createdAt: Date;
+};
+
 export type OrderDashboardStats = {
   totalRevenue: number;
   totalOrders: number;
   pendingOrders: number;
   averageOrderValue: number;
+  statusBreakdown: Record<string, number>;
+  recentOrders: DashboardRecentOrder[];
 };

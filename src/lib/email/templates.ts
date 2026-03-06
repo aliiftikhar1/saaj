@@ -114,6 +114,7 @@ export const ORDER_CONFIRMATION_TEMPLATE = {
           </table>
         </td>
       </tr>
+      {{trackingIdRow}}
     </table>
 
     <!-- Order Items -->

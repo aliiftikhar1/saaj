@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 import { cn, routes } from "@/lib";
@@ -20,30 +20,37 @@ export type NavbarUIProps = {
 };
 
 export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
-  // === STATE ===
   const [showSubMenu, setShowSubMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [lastPathName, setLastPathName] = useState("");
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [lastPath, setLastPath] = useState("");
 
   const pathName = usePathname();
   const navItems: NavItemType[] = getNavItems(collections);
   const { openSidebar } = useCartSidebar();
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // === SCROLL DETECTION for frosted glass effect ===
+  // Scroll detection — throttled with rAF
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 10);
+          ticking = false;
+        });
+      }
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu on route change (derived state pattern)
-  if (pathName !== lastPathName) {
-    setLastPathName(pathName);
-    setPendingHref(null);
+  // Close mobile menu on route change
+  if (pathName !== lastPath) {
+    setLastPath(pathName);
     if (showMobileMenu) {
       setShowMobileMenu(false);
       setActiveSubMenu(null);
@@ -52,14 +59,8 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (showMobileMenu) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = showMobileMenu ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [showMobileMenu]);
 
   const isActive = useCallback(
@@ -70,57 +71,74 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
     [pathName],
   );
 
+  const handleSubMenuEnter = useCallback(() => {
+    clearTimeout(hoverTimeout.current);
+    setShowSubMenu(true);
+  }, []);
+
+  const handleSubMenuLeave = useCallback(() => {
+    hoverTimeout.current = setTimeout(() => setShowSubMenu(false), 150);
+  }, []);
+
   return (
     <>
       <header
         className={cn(
-          "sticky top-0 left-0 w-full z-50 transition-all duration-500 ease-out",
+          "sticky top-0 left-0 w-full z-50 transition-[background-color,box-shadow] duration-300 ease-out",
           scrolled
-            ? "bg-white/80 backdrop-blur-2xl shadow-[0_1px_0_0_rgba(0,0,0,0.06)]"
-            : "bg-white backdrop-blur-none",
+            ? "bg-white/85 backdrop-blur-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04),0_1px_0_rgba(0,0,0,0.03)]"
+            : "bg-white",
         )}
       >
-        <nav className="mx-auto max-w-[1750px] px-5 md:px-10 xl:px-12 flex items-center justify-between h-[56px] md:h-[60px]">
-          {/* Left: Logo */}
-          <Link
-            href={routes.home}
-            className="flex items-center shrink-0 group"
-          >
-            <span className="text-[18px] md:text-[20px] font-medium tracking-[-0.04em] text-neutral-12 transition-opacity duration-200 group-hover:opacity-60">
-              Saaj Tradition
-            </span>
+        {/* Top accent line */}
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c9a84c]/60 to-transparent" />
+
+        <nav className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-12 flex items-center justify-between h-[52px] md:h-[58px]">
+          {/* Logo */}
+          <Link href={routes.home} className="flex items-center shrink-0 group select-none">
+            <div className="flex flex-col items-start">
+              <span
+                className="text-[17px] md:text-[19px] font-semibold tracking-[0.02em] text-neutral-12 transition-colors duration-200 group-hover:text-[#c9a84c]"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+              >
+                SAAJ
+              </span>
+              <span className="text-[8px] md:text-[9px] font-medium tracking-[0.28em] uppercase text-neutral-08 -mt-0.5">
+                Tradition
+              </span>
+            </div>
           </Link>
 
-          {/* Center: Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-0.5">
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-1 lg:gap-1.5">
             {navItems.map((item) => {
               if (item.subItems) {
                 return (
                   <div
                     key={item.id}
                     className="relative"
-                    onMouseLeave={() => setShowSubMenu(false)}
+                    onMouseEnter={handleSubMenuEnter}
+                    onMouseLeave={handleSubMenuLeave}
                   >
                     <button
-                      onMouseEnter={() => setShowSubMenu(true)}
-                      onClick={() => setShowSubMenu(!showSubMenu)}
+                      onClick={() => setShowSubMenu((s) => !s)}
                       className={cn(
-                        "px-3.5 py-1.5 text-[13px] tracking-[-0.01em] rounded-full transition-colors duration-200 cursor-pointer",
+                        "relative px-3 lg:px-3.5 py-1.5 text-[12.5px] lg:text-[13px] tracking-[0.01em] rounded-md transition-all duration-200 cursor-pointer flex items-center gap-1",
                         isActive(item.href)
-                          ? "text-neutral-12 font-medium"
-                          : "text-neutral-09 hover:text-neutral-12 font-normal",
+                          ? "text-neutral-12 font-semibold"
+                          : "text-neutral-08 hover:text-neutral-12 font-medium hover:bg-neutral-02",
                       )}
                     >
                       {item.text}
+                      <svg className={cn("w-3 h-3 transition-transform duration-200", showSubMenu && "rotate-180")} fill="none" viewBox="0 0 12 12">
+                        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </button>
                     <div
                       className={cn(
-                        "absolute top-full left-1/2 -translate-x-1/2 pt-3",
-                        showSubMenu
-                          ? "pointer-events-auto"
-                          : "pointer-events-none",
+                        "absolute top-full left-1/2 -translate-x-1/2 pt-2",
+                        showSubMenu ? "pointer-events-auto" : "pointer-events-none",
                       )}
-                      onMouseLeave={() => setShowSubMenu(false)}
                     >
                       <NavbarSubMenu
                         show={showSubMenu}
@@ -135,17 +153,16 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
                 <Link
                   key={item.id}
                   href={item.href}
-                  onClick={() => setPendingHref(item.href)}
                   className={cn(
-                    "px-3.5 py-1.5 text-[13px] tracking-[-0.01em] rounded-full transition-colors duration-200 flex items-center gap-1.5",
+                    "relative px-3 lg:px-3.5 py-1.5 text-[12.5px] lg:text-[13px] tracking-[0.01em] rounded-md transition-all duration-200",
                     isActive(item.href)
-                      ? "text-neutral-12 font-medium"
-                      : "text-neutral-09 hover:text-neutral-12 font-normal",
+                      ? "text-neutral-12 font-semibold"
+                      : "text-neutral-08 hover:text-neutral-12 font-medium hover:bg-neutral-02",
                   )}
                 >
                   {item.text}
-                  {pendingHref === item.href && (
-                    <span className="w-2.5 h-2.5 rounded-full border border-current border-t-transparent animate-spin opacity-50 shrink-0" />
+                  {isActive(item.href) && (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full bg-[#c9a84c]" />
                   )}
                 </Link>
               );
@@ -153,18 +170,18 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
           </div>
 
           {/* Right: Cart + Mobile Toggle */}
-          <div className="flex items-center gap-0 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={openSidebar}
               aria-label="Cart"
               className={cn(
-                "relative p-2.5 rounded-full transition-all duration-200 hover:bg-neutral-12/[0.04] cursor-pointer",
-                showMobileMenu && "opacity-0 pointer-events-none",
+                "relative p-2 rounded-lg transition-all duration-200 hover:bg-neutral-02 cursor-pointer",
+                showMobileMenu && "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto",
               )}
             >
               <CheckoutIcon />
               {itemCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-neutral-12 text-white text-[9px] font-medium leading-none">
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#c9a84c] text-white text-[9px] font-bold leading-none shadow-sm">
                   {itemCount < 99 ? itemCount : "99+"}
                 </span>
               )}
@@ -172,23 +189,18 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
 
             <button
               aria-label={showMobileMenu ? "Close menu" : "Open menu"}
-              onClick={() => {
-                setShowMobileMenu(!showMobileMenu);
-                setActiveSubMenu(null);
-              }}
-              className="p-2.5 rounded-full transition-all duration-200 hover:bg-neutral-12/[0.04] cursor-pointer md:hidden"
+              onClick={() => { setShowMobileMenu(!showMobileMenu); setActiveSubMenu(null); }}
+              className="p-2 rounded-lg transition-all duration-200 hover:bg-neutral-02 cursor-pointer md:hidden"
             >
-              {showMobileMenu ? (
-                <CloseIcon className="w-5 h-5" />
-              ) : (
-                <MenuBarIcon className="w-5 h-5" />
-              )}
+              {showMobileMenu
+                ? <CloseIcon className="w-5 h-5" />
+                : <MenuBarIcon className="w-5 h-5" />
+              }
             </button>
           </div>
         </nav>
       </header>
 
-      {/* Mobile Menu */}
       <NavbarMobileMenu
         activeSubMenu={activeSubMenu}
         setActiveSubMenu={setActiveSubMenu}
@@ -196,6 +208,8 @@ export function NavbarUI({ itemCount, collections = [] }: NavbarUIProps) {
         setShowMobileMenu={setShowMobileMenu}
         navItems={navItems}
         isActive={isActive}
+        openSidebar={openSidebar}
+        itemCount={itemCount}
       />
     </>
   );

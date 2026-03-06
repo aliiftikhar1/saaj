@@ -16,17 +16,20 @@ export function NavbarSubMenu(props: NavbarSubMenuProps) {
   return (
     <div
       className={cn(
-        "bg-white/95 backdrop-blur-xl rounded-xl border border-neutral-04/40 p-5 min-w-[280px] transition-all duration-200 ease-out",
-        "shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)]",
+        "bg-white rounded-xl border border-neutral-03 p-5 min-w-[280px] transition-all duration-200 ease-out",
+        "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.1),0_4px_12px_-4px_rgba(0,0,0,0.04)]",
         show
           ? "opacity-100 translate-y-0 visible"
-          : "opacity-0 -translate-y-1 invisible",
+          : "opacity-0 -translate-y-2 invisible",
       )}
     >
+      {/* Decorative top bar */}
+      <div className="h-[2px] rounded-full bg-gradient-to-r from-[#c9a84c]/40 via-[#c9a84c] to-[#c9a84c]/40 mb-4 -mt-1" />
+
       <div className="flex gap-8">
         {subItems?.map((subItem) => (
           <div key={subItem.id} className="flex flex-col min-w-[140px]">
-            <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-neutral-08 mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#c9a84c] mb-3">
               {subItem.text}
             </p>
             <div className="flex flex-col gap-0.5">
@@ -35,7 +38,7 @@ export function NavbarSubMenu(props: NavbarSubMenuProps) {
                   key={item.id}
                   href={item.href}
                   onClick={onClose}
-                  className="text-[13px] tracking-[-0.01em] text-neutral-10 hover:text-neutral-12 py-1.5 transition-colors duration-150"
+                  className="text-[13px] tracking-[0.01em] text-neutral-09 hover:text-neutral-12 hover:translate-x-0.5 py-1.5 transition-all duration-150"
                 >
                   {item.text}
                 </Link>

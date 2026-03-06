@@ -493,7 +493,7 @@ async function main() {
     });
 
     productMap[product.slug] = { id: created.id, price: created.price };
-    console.log(`  Created product: ${product.name} ($${product.price})`);
+    console.log(`  Created product: ${product.name} (Rs.${product.price})`);
   }
 
   // --- 3. Seed Orders ---
@@ -585,7 +585,7 @@ async function main() {
         },
       });
 
-      console.log(`  Created order for ${orderData.deliveryName} (${cartItemsData.length} items, $${orderTotal.toFixed(2)})`);
+      console.log(`  Created order for ${orderData.deliveryName} (${cartItemsData.length} items, Rs.${orderTotal.toFixed(2)})`);
     });
   }
 

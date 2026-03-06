@@ -44,9 +44,11 @@ export default async function ProductPage(props: ProductPageProps) {
   // === PARAMS ===
   const { id } = await params;
 
-  // === FETCHES ===
-  const productData = await getProductBySlug(id);
-  const threeRandomProductsData = await getThreeRandomProducts(id);
+  // === FETCHES (parallel) ===
+  const [productData, threeRandomProductsData] = await Promise.all([
+    getProductBySlug(id),
+    getThreeRandomProducts(id),
+  ]);
 
   if (!productData.success || !productData.data) {
     return (

@@ -90,7 +90,7 @@ export const Multiple: Story = {
       <AccordionItem value="item-3">
         <AccordionTrigger>What about gift wrapping?</AccordionTrigger>
         <AccordionContent>
-          Gift wrapping is available for $5 per item. Select this option at
+          Gift wrapping is available for Rs.500 per item. Select this option at
           checkout.
         </AccordionContent>
       </AccordionItem>
@@ -116,7 +116,7 @@ export const DefaultOpen: Story = {
       <AccordionItem value="item-2">
         <AccordionTrigger>Shipping & Delivery</AccordionTrigger>
         <AccordionContent>
-          Free shipping on orders over $50. Standard delivery takes 5-7 business
+          Free shipping on orders over Rs.5,000. Standard delivery takes 5-7 business
           days.
         </AccordionContent>
       </AccordionItem>

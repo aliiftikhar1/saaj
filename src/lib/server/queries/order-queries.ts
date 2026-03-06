@@ -7,6 +7,7 @@ import {
   OrderDashboardStats,
   GetAdminOrder,
   OrderWithCart,
+  DashboardRecentOrder,
 } from "@/types/client";
 import { wrapServerCall } from "../helpers";
 import { CACHE_TAG_CART } from "@/lib/constants/cache-tags";
@@ -112,31 +113,50 @@ export async function getDashboardStats(): Promise<
   ServerActionResponse<OrderDashboardStats>
 > {
   return wrapServerCall(async () => {
-    const [totalOrdersCount, pendingOrdersCount, revenueData] =
+    const [paidCount, pendingCount, revenueData, statusGroups, recentRaw] =
       await Promise.all([
-        prisma.order.count({
-          where: { status: OrderStatus.PAID },
-        }),
-        prisma.order.count({
-          where: { status: OrderStatus.PENDING },
-        }),
+        prisma.order.count({ where: { status: OrderStatus.PAID } }),
+        prisma.order.count({ where: { status: OrderStatus.PENDING } }),
         prisma.order.aggregate({
           where: { status: OrderStatus.PAID },
-          _sum: {
+          _sum: { totalPrice: true },
+        }),
+        prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
+        prisma.order.findMany({
+          take: 6,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            orderNumber: true,
+            delieveryName: true,
+            deliveryEmail: true,
             totalPrice: true,
+            status: true,
+            createdAt: true,
           },
         }),
       ]);
 
     const totalRevenue = Number(revenueData._sum.totalPrice ?? 0);
-    const averageOrderValue =
-      totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
+    const averageOrderValue = paidCount > 0 ? totalRevenue / paidCount : 0;
+
+    const statusBreakdown: Record<string, number> = {};
+    statusGroups.forEach((g) => {
+      statusBreakdown[g.status] = g._count._all;
+    });
+
+    const recentOrders: DashboardRecentOrder[] = recentRaw.map((o) => ({
+      ...o,
+      totalPrice: Number(o.totalPrice),
+    }));
 
     return {
       totalRevenue,
-      totalOrders: totalOrdersCount,
-      pendingOrders: pendingOrdersCount,
+      totalOrders: paidCount,
+      pendingOrders: pendingCount,
       averageOrderValue,
+      statusBreakdown,
+      recentOrders,
     };
   });
 }
