@@ -65,6 +65,9 @@ type ProductFormData = {
   collectionIds?: string[];
   /** Labels of existing sizes (for edit mode pre-selection) */
   existingSizeLabels?: string[];
+  stockStatus?: "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK";
+  lowStockThreshold?: number | null;
+  showLowStockWarning?: boolean;
 };
 
 type AdminProductsFormProps = {
@@ -132,6 +135,9 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
       isFeatured: productData?.isFeatured ?? false,
       imageUrls: productData?.images || [],
       collectionIds: productData?.collectionIds || [],
+      stockStatus: productData?.stockStatus ?? "AVAILABLE",
+      lowStockThreshold: productData?.lowStockThreshold ?? undefined,
+      showLowStockWarning: productData?.showLowStockWarning ?? false,
     },
   });
 
@@ -143,6 +149,8 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
   const isFeaturedValue = watch("isFeatured");
   const imageUrlsValue = watch("imageUrls");
   const collectionIdsValue = watch("collectionIds") || [];
+  const stockStatusValue = watch("stockStatus");
+  const showLowStockWarningValue = watch("showLowStockWarning");
 
   // === MEMOS ===
   const savedImageUrls = useMemo(() => imageUrlsValue || [], [imageUrlsValue]);
@@ -768,6 +776,87 @@ export function AdminProductsForm(props: AdminProductsFormProps) {
               </div>
               <AdminFieldError errors={[errors.isActive]} />
             </AdminField>
+
+            {/* STOCK STATUS */}
+            <AdminField>
+              <AdminFieldLabel htmlFor="stockStatus">Stock Status</AdminFieldLabel>
+              <AdminFieldDescription>
+                Set how you want to manage the stock availability of this product.
+              </AdminFieldDescription>
+              <AdminSelect
+                value={stockStatusValue ?? "AVAILABLE"}
+                onValueChange={(val) => {
+                  setValue("stockStatus", val as "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK", {
+                    shouldValidate: true,
+                  });
+                }}
+              >
+                <AdminSelectTrigger id="stockStatus">
+                  <AdminSelectValue />
+                </AdminSelectTrigger>
+                <AdminSelectContent>
+                  <AdminSelectGroup>
+                    <AdminSelectItem value="AVAILABLE">Available</AdminSelectItem>
+                    <AdminSelectItem value="LOW_STOCK">Low Stock</AdminSelectItem>
+                    <AdminSelectItem value="OUT_OF_STOCK">Out of Stock</AdminSelectItem>
+                  </AdminSelectGroup>
+                </AdminSelectContent>
+              </AdminSelect>
+              <AdminFieldError errors={[errors.stockStatus]} />
+            </AdminField>
+
+            {/* LOW STOCK THRESHOLD (shown when LOW_STOCK is selected) */}
+            {stockStatusValue === "LOW_STOCK" && (
+              <AdminField>
+                <AdminFieldLabel htmlFor="lowStockThreshold">
+                  Low Stock Threshold (optional)
+                </AdminFieldLabel>
+                <AdminFieldDescription>
+                  Leave empty to show warning without numbers. Enter a number to show &ldquo;Only X left in stock&rdquo;.
+                </AdminFieldDescription>
+                <AdminInput
+                  id="lowStockThreshold"
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="e.g., 5"
+                  {...register("lowStockThreshold", {
+                    setValueAs: (v) => (v === "" ? undefined : parseInt(v)),
+                  })}
+                />
+                <AdminFieldError errors={[errors.lowStockThreshold]} />
+              </AdminField>
+            )}
+
+            {/* SHOW LOW STOCK WARNING (shown when LOW_STOCK is selected) */}
+            {stockStatusValue === "LOW_STOCK" && (
+              <AdminField>
+                <AdminFieldLabel>Show Low Stock Warning</AdminFieldLabel>
+                <AdminFieldDescription>
+                  Enable to display a warning message on the product page.
+                </AdminFieldDescription>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showLowStockWarningValue}
+                    onClick={() => setValue("showLowStockWarning", !showLowStockWarningValue)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 ${
+                      showLowStockWarningValue ? "bg-neutral-900" : "bg-neutral-200"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        showLowStockWarningValue ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm font-medium ${showLowStockWarningValue ? "text-neutral-900" : "text-neutral-400"}`}>
+                    {showLowStockWarningValue ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
+                <AdminFieldError errors={[errors.showLowStockWarning]} />
+              </AdminField>
+            )}
 
             {/* SUBMIT */}
             <div className="flex flex-col gap-3">

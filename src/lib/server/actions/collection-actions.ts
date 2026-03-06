@@ -1,6 +1,5 @@
 "use server";
 
-import { put } from "@vercel/blob";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -14,6 +13,7 @@ import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
 import { adminRoutes, routes } from "@/lib/routing";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
+import { uploadToCloudinary } from "@/lib/server/helpers/cloudinary-upload";
 
 // === MUTATIONS ===
 export async function deleteCollectionById(
@@ -45,10 +45,12 @@ export async function createCollection(
     const imageFile = data.image;
     const imageFileName = BLOB_STORAGE_PREFIXES.COLLECTIONS + data.slug;
 
-    const blob = await put(imageFileName, imageFile, {
-      access: "public",
-      addRandomSuffix: true,
-    });
+    const buffer = await imageFile.arrayBuffer();
+    const imageUrl = await uploadToCloudinary(
+      Buffer.from(buffer),
+      imageFileName,
+      "collections"
+    );
 
     const maxOrder = await prisma.collection.aggregate({
       _max: { sortOrder: true },
@@ -58,7 +60,7 @@ export async function createCollection(
       data: {
         name: data.name,
         tagline: data.tagline,
-        imageUrl: blob.url,
+        imageUrl: imageUrl,
         slug: data.slug,
         sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
       },
@@ -89,17 +91,19 @@ export async function updateCollectionById(
       const imageFile = data.image;
       const imageFileName = BLOB_STORAGE_PREFIXES.COLLECTIONS + data.slug;
 
-      const blob = await put(imageFileName, imageFile, {
-        access: "public",
-        addRandomSuffix: true,
-      });
+      const buffer = await imageFile.arrayBuffer();
+      const imageUrl = await uploadToCloudinary(
+        Buffer.from(buffer),
+        imageFileName,
+        "collections"
+      );
 
       await prisma.collection.update({
         where: { id },
         data: {
           name: data.name,
           tagline: data.tagline,
-          imageUrl: blob.url,
+          imageUrl: imageUrl,
           slug: data.slug,
           sortOrder: data.sortOrder,
         },

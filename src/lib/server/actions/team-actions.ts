@@ -1,6 +1,5 @@
 "use server";
 
-import { put } from "@vercel/blob";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -9,11 +8,11 @@ import {
   AdminFormAddTeamData,
   AdminFormEditTeamData,
 } from "@/components/admin/forms/AdminTeamForm/schema";
-import { BLOB_STORAGE_PREFIXES } from "@/lib/constants";
 import { adminRoutes, routes } from "@/lib/routing";
 import { CACHE_TAG_TEAM } from "@/lib/constants/cache-tags";
 import { wrapServerCall } from "../helpers/generic-helpers";
 import { isDemoMode } from "@/lib/server/helpers/demo-mode";
+import { uploadToCloudinary } from "@/lib/server/helpers/cloudinary-upload";
 
 // === MUTATIONS ===
 export async function deleteTeamMemberById(
@@ -43,12 +42,12 @@ export async function createTeamMember(
     }
 
     const imageFile = data.image;
-    const imageFileName = BLOB_STORAGE_PREFIXES.TEAM + data.name;
-
-    const blob = await put(imageFileName, imageFile, {
-      access: "public",
-      addRandomSuffix: true,
-    });
+    const buffer = await imageFile.arrayBuffer();
+    const imageSrc = await uploadToCloudinary(
+      Buffer.from(buffer),
+      data.name,
+      "team",
+    );
 
     const maxOrder = await prisma.teamMember.aggregate({
       _max: { sortOrder: true },
@@ -58,7 +57,7 @@ export async function createTeamMember(
       data: {
         name: data.name,
         position: data.position,
-        imageSrc: blob.url,
+        imageSrc,
         sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
       },
     });
@@ -86,19 +85,19 @@ export async function updateTeamMemberById(
 
     if (data.image) {
       const imageFile = data.image;
-      const imageFileName = BLOB_STORAGE_PREFIXES.TEAM + data.name;
-
-      const blob = await put(imageFileName, imageFile, {
-        access: "public",
-        addRandomSuffix: true,
-      });
+      const buffer = await imageFile.arrayBuffer();
+      const imageSrc = await uploadToCloudinary(
+        Buffer.from(buffer),
+        data.name,
+        "team",
+      );
 
       await prisma.teamMember.update({
         where: { id },
         data: {
           name: data.name,
           position: data.position,
-          imageSrc: blob.url,
+          imageSrc,
           sortOrder: data.sortOrder,
         },
       });

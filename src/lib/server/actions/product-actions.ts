@@ -48,6 +48,9 @@ export async function createProduct(
         slug: data.slug,
         isActive: data.isActive,
         isFeatured: data.isFeatured ?? false,
+        stockStatus: data.stockStatus ?? "AVAILABLE",
+        lowStockThreshold: data.lowStockThreshold ?? null,
+        showLowStockWarning: data.showLowStockWarning ?? false,
         images: data.imageUrls,
         sizeType: data.sizeType,
 
@@ -96,6 +99,9 @@ export async function updateProductById(
         slug: data.slug,
         isActive: data.isActive,
         isFeatured: data.isFeatured ?? false,
+        stockStatus: data.stockStatus ?? "AVAILABLE",
+        lowStockThreshold: data.lowStockThreshold ?? null,
+        showLowStockWarning: data.showLowStockWarning ?? false,
         images: data.imageUrls,
         sizeType: data.sizeType,
         collections: {
@@ -139,6 +145,26 @@ export async function deleteProductById(
     revalidateTag(CACHE_TAG_PRODUCT, "max");
 
     return { id: deleted.id };
+  });
+}
+
+/** Delete multiple products by their IDs */
+export async function deleteProductsByIds(
+  ids: string[],
+): Promise<ServerActionResponse<{ count: number }>> {
+  return wrapServerCall(async () => {
+    if (isDemoMode()) {
+      return { count: ids.length };
+    }
+
+    const result = await prisma.product.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    revalidatePath(adminRoutes.products);
+    revalidateTag(CACHE_TAG_PRODUCT, "max");
+
+    return { count: result.count };
   });
 }
 

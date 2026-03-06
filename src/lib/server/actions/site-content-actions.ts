@@ -84,3 +84,22 @@ export async function bulkUpdateSiteContent(
     return { count: items.length };
   });
 }
+
+export async function deleteSiteContentById(
+  id: string,
+): Promise<ServerActionResponse<{ id: string }>> {
+  return wrapServerCall(async () => {
+    if (isDemoMode()) {
+      return { id };
+    }
+
+    await prisma.siteContent.delete({ where: { id } });
+
+    revalidatePath(adminRoutes.siteContent);
+    revalidatePath(routes.home);
+    revalidatePath(routes.about);
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "max");
+
+    return { id };
+  });
+}
