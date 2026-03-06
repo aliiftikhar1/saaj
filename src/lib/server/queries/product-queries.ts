@@ -50,8 +50,7 @@ const getFeaturedProductsCached = unstable_cache(
   async () => {
     const products = await prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
-      orderBy: { createdAt: "desc" },
-      take: 9,
+      orderBy: { updatedAt: "desc" },
     });
 
     return products.map(serializeProduct);

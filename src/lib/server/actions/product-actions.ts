@@ -62,7 +62,7 @@ export async function createProduct(
     });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
+    revalidateTag(CACHE_TAG_PRODUCT, "max");
 
     return { id: created.id };
   });
@@ -119,7 +119,7 @@ export async function updateProductById(
     });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
+    revalidateTag(CACHE_TAG_PRODUCT, "max");
 
     return { id: created.id };
   });
@@ -136,7 +136,7 @@ export async function deleteProductById(
     const deleted = await prisma.product.delete({ where: { id } });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
+    revalidateTag(CACHE_TAG_PRODUCT, "max");
 
     return { id: deleted.id };
   });
@@ -160,7 +160,7 @@ export async function toggleProductFeatured(
     });
 
     revalidatePath(adminRoutes.products);
-    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
+    revalidateTag(CACHE_TAG_PRODUCT, "max");
 
     return { id: updated.id, isFeatured: updated.isFeatured };
   });

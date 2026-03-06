@@ -25,7 +25,7 @@ export async function deleteTestimonialById(
     const deleted = await prisma.testimonial.delete({ where: { id } });
     revalidatePath(adminRoutes.testimonials);
     revalidatePath(routes.home);
-    revalidateTag(CACHE_TAG_TESTIMONIAL, "unstable_cache");
+    revalidateTag(CACHE_TAG_TESTIMONIAL, "max");
     return { id: deleted.id };
   });
 }
@@ -65,7 +65,7 @@ export async function createTestimonial(
     });
     revalidatePath(adminRoutes.testimonials);
     revalidatePath(routes.home);
-    revalidateTag(CACHE_TAG_TESTIMONIAL, "unstable_cache");
+    revalidateTag(CACHE_TAG_TESTIMONIAL, "max");
     return { id: created.id };
   });
 }
@@ -105,7 +105,7 @@ export async function updateTestimonialById(
 
     revalidatePath(adminRoutes.testimonials);
     revalidatePath(routes.home);
-    revalidateTag(CACHE_TAG_TESTIMONIAL, "unstable_cache");
+    revalidateTag(CACHE_TAG_TESTIMONIAL, "max");
     return { id };
   });
 }

@@ -28,7 +28,7 @@ export async function deleteCollectionById(
 
     revalidatePath(adminRoutes.collections);
     revalidatePath(routes.home);
-    revalidateTag(CACHE_TAG_COLLECTION, "unstable_cache");
+    revalidateTag(CACHE_TAG_COLLECTION, "max");
 
     return { id: deleted.id };
   });
@@ -66,7 +66,7 @@ export async function createCollection(
 
     revalidatePath(adminRoutes.collections);
     revalidatePath(routes.home);
-    revalidateTag(CACHE_TAG_COLLECTION, "unstable_cache");
+    revalidateTag(CACHE_TAG_COLLECTION, "max");
 
     return { id: created.id };
   });
@@ -83,7 +83,7 @@ export async function updateCollectionById(
 
     revalidatePath(adminRoutes.collections);
     revalidatePath(routes.home);
-    revalidateTag(CACHE_TAG_COLLECTION, "unstable_cache");
+    revalidateTag(CACHE_TAG_COLLECTION, "max");
 
     if (data.image) {
       const imageFile = data.image;

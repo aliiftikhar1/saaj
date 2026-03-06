@@ -54,7 +54,7 @@ export async function createCategory(
 
     revalidatePath(adminRoutes.categories);
     revalidatePath(routes.shop);
-    revalidateTag(CACHE_TAG_CATEGORY, "unstable_cache");
+    revalidateTag(CACHE_TAG_CATEGORY, "max");
 
     return { id: created.id };
   });
@@ -92,7 +92,7 @@ export async function updateCategoryById(
 
     revalidatePath(adminRoutes.categories);
     revalidatePath(routes.shop);
-    revalidateTag(CACHE_TAG_CATEGORY, "unstable_cache");
+    revalidateTag(CACHE_TAG_CATEGORY, "max");
 
     return { id: updated.id };
   });
@@ -116,7 +116,7 @@ export async function deleteCategoryById(
 
     revalidatePath(adminRoutes.categories);
     revalidatePath(routes.shop);
-    revalidateTag(CACHE_TAG_CATEGORY, "unstable_cache");
+    revalidateTag(CACHE_TAG_CATEGORY, "max");
 
     return { id: deleted.id };
   });

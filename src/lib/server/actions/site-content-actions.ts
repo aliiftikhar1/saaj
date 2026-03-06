@@ -30,7 +30,7 @@ export async function upsertSiteContent(
     revalidatePath(adminRoutes.siteContent);
     revalidatePath(routes.home);
     revalidatePath(routes.about);
-    revalidateTag(CACHE_TAG_SITE_CONTENT, "unstable_cache");
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "max");
 
     return { id: result.id };
   });
@@ -53,7 +53,7 @@ export async function updateSiteContentById(
     revalidatePath(adminRoutes.siteContent);
     revalidatePath(routes.home);
     revalidatePath(routes.about);
-    revalidateTag(CACHE_TAG_SITE_CONTENT, "unstable_cache");
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "max");
 
     return { id };
   });
@@ -79,7 +79,7 @@ export async function bulkUpdateSiteContent(
     revalidatePath(adminRoutes.siteContent);
     revalidatePath(routes.home);
     revalidatePath(routes.about);
-    revalidateTag(CACHE_TAG_SITE_CONTENT, "unstable_cache");
+    revalidateTag(CACHE_TAG_SITE_CONTENT, "max");
 
     return { count: items.length };
   });

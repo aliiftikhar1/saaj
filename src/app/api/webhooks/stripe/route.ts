@@ -114,10 +114,18 @@ export async function POST(req: NextRequest) {
           console.error("Failed to increment coupon usage:", err);
         }
 
-        revalidateTag(CACHE_TAG_CART, "unstable_cache");
-        revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
+        revalidateTag(CACHE_TAG_CART, "max");
+        revalidateTag(CACHE_TAG_PRODUCT, "max");
         revalidatePath(adminRoutes.orders);
         revalidatePath(adminRoutes.products);
+
+        // Send confirmation emails exactly once — here in the webhook, not on the success page
+        try {
+          const { sendOrderConfirmationEmails } = await import("@/lib/server/actions/email-actions");
+          await sendOrderConfirmationEmails(orderId);
+        } catch (emailErr) {
+          console.error("[Webhook] Failed to send order confirmation emails:", emailErr);
+        }
       }
 
       break;

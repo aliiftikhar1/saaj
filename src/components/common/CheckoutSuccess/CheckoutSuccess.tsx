@@ -8,11 +8,12 @@ import { CheckoutSuccessUI } from "./CheckoutSuccessUI";
 type CheckoutSuccessProps = {
   orderNumber?: string;
   email?: string;
+  trackingToken?: string;
 };
 
 export function CheckoutSuccess(props: CheckoutSuccessProps) {
   // === PROPS ===
-  const { orderNumber, email } = props;
+  const { orderNumber, email, trackingToken } = props;
 
   // === CONTEXT ===
   const { refreshCartCount } = useCartCount();
@@ -28,5 +29,5 @@ export function CheckoutSuccess(props: CheckoutSuccessProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <CheckoutSuccessUI orderNumber={orderNumber} email={email} />;
+  return <CheckoutSuccessUI orderNumber={orderNumber} email={email} trackingToken={trackingToken} />;
 }

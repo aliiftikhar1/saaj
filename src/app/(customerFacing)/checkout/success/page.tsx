@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 
 import { CheckoutSuccess } from "@/components/common/CheckoutSuccess/CheckoutSuccess";
 import { getCurrentOrderById } from "@/lib/server/queries";
-import { sendOrderConfirmationEmails } from "@/lib/server/actions/email-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -33,17 +32,15 @@ export default async function CheckoutSuccessPage(
     redirect("/");
   }
 
-  // === SEND ORDER CONFIRMATION EMAILS (non-blocking) ===
-  // Fire-and-forget: don't await so page renders immediately
-  sendOrderConfirmationEmails(orderId).catch((err) => {
-    console.error("[Checkout] Failed to send order confirmation emails:", err);
-  });
+  // Emails are sent from the Stripe webhook (fires exactly once on payment_intent.succeeded)
+  // so we do NOT send them here — avoids duplicate emails on every page refresh.
 
   return (
     <div className="container mx-auto">
       <CheckoutSuccess
         orderNumber={order.data.orderNumber?.toString()}
         email={order.data.deliveryEmail || undefined}
+        trackingToken={order.data.trackingToken || undefined}
       />
     </div>
   );

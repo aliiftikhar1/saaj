@@ -77,7 +77,13 @@ function applyVariables(template: string, vars: Record<string, string>): string 
   });
 }
 
-const STORE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://saaj-tradition.com";
+const STORE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
 const STORE_EMAIL = process.env.EMAIL_USER ?? "saajtraditionbahawalpur@gmail.com";
 
 async function getCustomTemplate(type: EmailTemplateType) {

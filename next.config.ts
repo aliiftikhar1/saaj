@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  reactCompiler: true,
+  reactCompiler: process.env.NODE_ENV === "production",
   images: {
     qualities: [50, 60, 75, 95],
     remotePatterns: [

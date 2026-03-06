@@ -26,7 +26,7 @@ export async function deleteTeamMemberById(
 
     const deleted = await prisma.teamMember.delete({ where: { id } });
 
-    revalidateTag(CACHE_TAG_TEAM, "unstable_cache");
+    revalidateTag(CACHE_TAG_TEAM, "max");
     revalidatePath(adminRoutes.team);
     revalidatePath(routes.about);
 
@@ -63,7 +63,7 @@ export async function createTeamMember(
       },
     });
 
-    revalidateTag(CACHE_TAG_TEAM, "unstable_cache");
+    revalidateTag(CACHE_TAG_TEAM, "max");
     revalidatePath(adminRoutes.team);
     revalidatePath(routes.about);
 
@@ -80,7 +80,7 @@ export async function updateTeamMemberById(
       return { id };
     }
 
-    revalidateTag(CACHE_TAG_TEAM, "unstable_cache");
+    revalidateTag(CACHE_TAG_TEAM, "max");
     revalidatePath(adminRoutes.team);
     revalidatePath(routes.about);
 

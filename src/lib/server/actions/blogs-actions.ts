@@ -48,7 +48,7 @@ export async function createBlog(
       },
     });
 
-    revalidateTag(CACHE_TAG_BLOG, "unstable_cache");
+    revalidateTag(CACHE_TAG_BLOG, "max");
     revalidatePath(adminRoutes.blogs);
     revalidatePath(routes.blog);
     revalidatePath(routes.home);
@@ -66,7 +66,7 @@ export async function updateBlogById(
       return { id };
     }
 
-    revalidateTag(CACHE_TAG_BLOG, "unstable_cache");
+    revalidateTag(CACHE_TAG_BLOG, "max");
     revalidatePath(adminRoutes.blogs);
     revalidatePath(routes.blog);
     revalidatePath(routes.home);
@@ -127,7 +127,7 @@ export async function deleteBlogById(
     }
 
     const deleted = await prisma.blogPost.delete({ where: { id } });
-    revalidateTag(CACHE_TAG_BLOG, "unstable_cache");
+    revalidateTag(CACHE_TAG_BLOG, "max");
     revalidatePath(adminRoutes.blogs);
     revalidatePath(routes.blog);
     revalidatePath(routes.home);

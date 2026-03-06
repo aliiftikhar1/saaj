@@ -26,7 +26,7 @@ export async function deleteAuthorById(
 
     const deleted = await prisma.author.delete({ where: { id } });
 
-    revalidateTag(CACHE_TAG_AUTHOR, "unstable_cache");
+    revalidateTag(CACHE_TAG_AUTHOR, "max");
     revalidatePath(adminRoutes.authors);
     revalidatePath(adminRoutes.blogsCreate);
 
@@ -58,7 +58,7 @@ export async function createAuthor(
       },
     });
 
-    revalidateTag(CACHE_TAG_AUTHOR, "unstable_cache");
+    revalidateTag(CACHE_TAG_AUTHOR, "max");
     revalidatePath(adminRoutes.authors);
     revalidatePath(adminRoutes.blogsCreate);
 
@@ -75,7 +75,7 @@ export async function updateAuthorById(
       return { id };
     }
 
-    revalidateTag(CACHE_TAG_AUTHOR, "unstable_cache");
+    revalidateTag(CACHE_TAG_AUTHOR, "max");
     revalidatePath(adminRoutes.authors);
     revalidatePath(adminRoutes.blogs);
     revalidatePath(adminRoutes.blogsCreate);

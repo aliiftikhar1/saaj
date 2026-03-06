@@ -24,7 +24,13 @@ async function getAdminNotificationEmail(): Promise<string> {
   return process.env.EMAIL_USER ?? "";
 }
 
-const STORE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://saaj-tradition.com";
+const STORE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
 
 /** Fetch full order data and send confirmation emails to both customer & admin */
 export async function sendOrderConfirmationEmails(

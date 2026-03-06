@@ -24,7 +24,7 @@ export async function deleteCouponById(
       return { id };
     }
     const deleted = await prisma.coupon.delete({ where: { id } });
-    revalidateTag(CACHE_TAG_COUPON, "unstable_cache");
+    revalidateTag(CACHE_TAG_COUPON, "max");
     revalidatePath(adminRoutes.coupons);
     return { id: deleted.id };
   });
@@ -46,7 +46,7 @@ export async function createCoupon(
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       },
     });
-    revalidateTag(CACHE_TAG_COUPON, "unstable_cache");
+    revalidateTag(CACHE_TAG_COUPON, "max");
     revalidatePath(adminRoutes.coupons);
     return { id: created.id };
   });
@@ -70,7 +70,7 @@ export async function updateCouponById(
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       },
     });
-    revalidateTag(CACHE_TAG_COUPON, "unstable_cache");
+    revalidateTag(CACHE_TAG_COUPON, "max");
     revalidatePath(adminRoutes.coupons);
     return { id };
   });
@@ -115,7 +115,7 @@ export async function applyCouponCode(
       path: "/",
     });
 
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
 
     return result.data;
   });
@@ -127,6 +127,6 @@ export async function removeCouponCode(): Promise<
   return wrapServerCall(async () => {
     const cookieStore = await cookies();
     cookieStore.delete(COOKIE_COUPON_CODE);
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
   });
 }

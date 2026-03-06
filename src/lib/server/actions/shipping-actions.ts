@@ -53,7 +53,7 @@ export async function updateGlobalShippingRate(
     revalidatePath(adminRoutes.shipping);
     revalidatePath("/cart");
     revalidatePath("/checkout");
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
   });
 }
 
@@ -107,7 +107,7 @@ export async function bulkUpdateProductShippingCharges(
     revalidatePath(adminRoutes.shipping);
     revalidatePath("/cart");
     revalidatePath("/checkout");
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
   });
 }
 

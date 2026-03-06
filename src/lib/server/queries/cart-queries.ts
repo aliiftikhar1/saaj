@@ -31,9 +31,9 @@ export async function getCart(): Promise<ServerActionResponse<FullCart>> {
       select: { status: true },
     });
 
-    // If cart is ORDERED (paid), delete cookie and return empty cart
-    if (cart?.status === CartStatus.ORDERED) {
-      cookieStore.delete(COOKIE_CART_ID);
+    // If cart is ORDERED (paid) or not found, return empty cart
+    // Note: cookie deletion must happen in a Server Action — not here (read-only during render)
+    if (!cart || cart.status === CartStatus.ORDERED) {
       return {
         items: [],
         summary: {

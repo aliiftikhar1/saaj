@@ -223,7 +223,7 @@ export async function addToCart({
 
     refreshCartCookie(cookieStore, cartId);
 
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
 
     return { quantity: cartQuantity };
   });
@@ -281,7 +281,7 @@ export async function updateCartItemQuantity({
       return newCartTotal;
     });
 
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
 
     refreshCartCookie(cookieStore, existingCartId);
 
@@ -318,7 +318,7 @@ export async function removeCartItem({
       return items.reduce((sum, item) => sum + item.quantity, 0);
     });
 
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
 
     refreshCartCookie(cookieStore, existingCartId);
 
@@ -416,7 +416,7 @@ export async function initiateCheckout(
               : {}),
           },
         });
-        revalidateTag(CACHE_TAG_CART, "unstable_cache");
+        revalidateTag(CACHE_TAG_CART, "max");
       }
       return;
     }
@@ -575,8 +575,8 @@ export async function initiateCheckout(
       },
     });
 
-    revalidateTag(CACHE_TAG_CART, "unstable_cache");
-    revalidateTag(CACHE_TAG_PRODUCT, "unstable_cache");
+    revalidateTag(CACHE_TAG_CART, "max");
+    revalidateTag(CACHE_TAG_PRODUCT, "max");
   });
 }
 
@@ -584,5 +584,5 @@ export async function initiateCheckout(
 export async function clearCart(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_CART_ID);
-  revalidateTag(CACHE_TAG_CART, "unstable_cache");
+  revalidateTag(CACHE_TAG_CART, "max");
 }
