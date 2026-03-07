@@ -30,7 +30,6 @@ import {
   getActiveTestimonials,
   getMarqueeProducts,
 } from "@/lib/server/queries";
-import { seedSiteContentDefaults } from "@/app/admin/site-content/seed";
 
 export const metadata: Metadata = {
   title: {
@@ -39,9 +38,6 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  // Ensure all site content defaults (including marquee) exist in DB
-  await seedSiteContentDefaults();
-
   // === QUERIES (parallel) ===
   const [products, blogPostsResponse, collectionsResponse, contentMapResponse, testimonialsResponse] =
     await Promise.all([

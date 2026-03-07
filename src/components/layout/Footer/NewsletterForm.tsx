@@ -103,19 +103,19 @@ export function NewsletterForm() {
 
   return (
     <form action={formAction}>
-      <div className="flex flex-col sm:flex-row h-auto sm:h-10 rounded-2xl sm:rounded-full overflow-hidden border border-white/[0.15] bg-white/[0.06] focus-within:border-white/30 transition-colors duration-200">
+      <div className="flex h-11 rounded-full overflow-hidden border border-gray-300 bg-white focus-within:border-amber-400 transition-colors duration-200 shadow-sm">
         <input
           id="newsletter"
           name="email"
           type="email"
           placeholder="Your email address"
           required
-          className="flex-1 min-w-0 bg-transparent px-4 py-3 sm:py-0 text-[13px] text-white/80 placeholder:text-white/30 outline-none"
+          className="flex-1 min-w-0 bg-transparent pl-4 pr-2 text-[13px] text-gray-800 placeholder:text-gray-400 outline-none"
         />
         <button
           type="submit"
           disabled={isPending}
-          className="sm:shrink-0 sm:my-1 sm:mr-1 px-4 py-2.5 sm:py-0 sm:rounded-full rounded-xl mx-1 mb-1 sm:mx-0 sm:mb-0 bg-[#c9a84c] text-white text-[10px] font-semibold uppercase tracking-[0.15em] hover:bg-[#b8960c] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 h-full px-5 bg-[#c9a84c] text-white text-[11px] font-bold uppercase tracking-[0.12em] hover:bg-[#b8960c] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? "…" : "Subscribe"}
         </button>

@@ -10,6 +10,8 @@ import {
   NEWSLETTER_TEMPLATE,
   PRODUCT_UPDATE_TEMPLATE,
   COLLECTION_UPDATE_TEMPLATE,
+  WELCOME_EMAIL_TEMPLATE,
+  THANK_YOU_EMAIL_TEMPLATE,
 } from "./templates";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -500,4 +502,40 @@ export async function sendCustomEmail(input: {
     subject: input.subject,
     html: input.html,
   });
+}
+
+// ─── WELCOME EMAIL (new subscriber) ─────────────────────────────────────────
+
+export async function sendWelcomeEmail(input: {
+  to: string;
+  name?: string;
+}) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+
+  const subscriberName = input.name ?? "Valued Customer";
+  const html = WELCOME_EMAIL_TEMPLATE.html
+    .replace(/\{\{subscriberName\}\}/g, subscriberName)
+    .replace(/\{\{storeUrl\}\}/g, STORE_URL)
+    .replace(/\{\{unsubscribeUrl\}\}/g, `${STORE_URL}/unsubscribe`);
+  const subject = WELCOME_EMAIL_TEMPLATE.subject;
+
+  await transporter.sendMail({ from: EMAIL_FROM, to: input.to, subject, html });
+}
+
+// ─── THANK-YOU EMAIL (to an existing order customer) ────────────────────────
+
+export async function sendThankYouEmail(input: {
+  to: string;
+  customerName: string;
+  orderNumber?: number | string;
+}) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+
+  const html = THANK_YOU_EMAIL_TEMPLATE.html
+    .replace(/\{\{customerName\}\}/g, input.customerName)
+    .replace(/\{\{orderNumber\}\}/g, String(input.orderNumber ?? ""))
+    .replace(/\{\{storeUrl\}\}/g, STORE_URL);
+  const subject = THANK_YOU_EMAIL_TEMPLATE.subject;
+
+  await transporter.sendMail({ from: EMAIL_FROM, to: input.to, subject, html });
 }

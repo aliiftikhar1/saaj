@@ -354,3 +354,94 @@ export const COLLECTION_UPDATE_TEMPLATE = {
     </div>
   `),
 };
+
+// ─── WELCOME EMAIL (new subscriber) ─────────────────────────────────────────
+export const WELCOME_EMAIL_TEMPLATE = {
+  subject: "Welcome to Saaj Tradition 🌸",
+  html: emailBase(`
+    ${sectionHeading("Welcome to Saaj Tradition")}
+    <p style="color:#555;line-height:1.7;margin-bottom:20px;">
+      Dear <strong style="color:#1a1a2e;">{{subscriberName}}</strong>,<br/><br/>
+      We're so glad to have you with us. You've just joined a community that celebrates the rich heritage of traditional Bahawalpuri craftsmanship.
+    </p>
+
+    <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:12px;padding:28px;margin-bottom:28px;text-align:center;">
+      <p style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:#fff;font-weight:600;margin-bottom:8px;">What to Expect</p>
+      <div style="height:2px;background:linear-gradient(90deg,transparent,${GOLD_COLOR},transparent);max-width:160px;margin:0 auto 20px;"></div>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:10px;text-align:center;">
+            <p style="font-size:22px;margin-bottom:6px;">🆕</p>
+            <p style="font-size:12px;font-weight:700;color:${GOLD_COLOR};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">New Arrivals</p>
+            <p style="font-size:12px;color:rgba(255,255,255,0.65);">Be the first to know</p>
+          </td>
+          <td style="padding:10px;text-align:center;">
+            <p style="font-size:22px;margin-bottom:6px;">🎁</p>
+            <p style="font-size:12px;font-weight:700;color:${GOLD_COLOR};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Exclusive Offers</p>
+            <p style="font-size:12px;color:rgba(255,255,255,0.65);">Members-only deals</p>
+          </td>
+          <td style="padding:10px;text-align:center;">
+            <p style="font-size:22px;margin-bottom:6px;">🧵</p>
+            <p style="font-size:12px;font-weight:700;color:${GOLD_COLOR};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Stories</p>
+            <p style="font-size:12px;color:rgba(255,255,255,0.65);">Behind our craft</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <a href="{{storeUrl}}" style="display:inline-block;background:${GOLD_COLOR};color:#1a1a2e;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">
+        Start Shopping
+      </a>
+    </div>
+
+    <p style="color:#888;font-size:12px;line-height:1.7;text-align:center;">
+      With love from Bahawalpur,<br/>
+      <strong style="color:#1a1a2e;">The Saaj Tradition Team</strong>
+    </p>
+
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #f0ece8;text-align:center;">
+      <p style="font-size:11px;color:#aaa;">
+        You're receiving this because you subscribed at saajtradition.com.<br/>
+        <a href="{{unsubscribeUrl}}" style="color:#999;text-decoration:underline;">Unsubscribe</a>
+      </p>
+    </div>
+  `),
+};
+
+// ─── THANK-YOU EMAIL (order customer) ───────────────────────────────────────
+export const THANK_YOU_EMAIL_TEMPLATE = {
+  subject: "Thank You for Shopping with Us 💛 | Saaj Tradition",
+  html: emailBase(`
+    ${sectionHeading("Thank You!")}
+    <p style="color:#555;line-height:1.7;margin-bottom:20px;">
+      Dear <strong style="color:#1a1a2e;">{{customerName}}</strong>,<br/><br/>
+      We wanted to take a moment to sincerely thank you for your order <strong>#{{orderNumber}}</strong>. Your trust in Saaj Tradition means the world to us.
+    </p>
+
+    <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:12px;padding:28px;margin-bottom:28px;text-align:center;">
+      <p style="font-family:'Playfair Display',Georgia,serif;font-size:36px;color:${GOLD_COLOR};margin-bottom:8px;">💛</p>
+      <p style="font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#fff;font-weight:600;margin-bottom:8px;">
+        Your satisfaction is our priority
+      </p>
+      <p style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.7;max-width:360px;margin:0 auto;">
+        Every piece from Saaj Tradition is crafted with care, honouring the rich traditions of Bahawalpur. We hope it brings you joy.
+      </p>
+    </div>
+
+    <p style="color:#555;line-height:1.7;margin-bottom:28px;">
+      If you have any questions about your order or need assistance, please don't hesitate to reach out to us — we're always here to help.
+    </p>
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <a href="{{storeUrl}}" style="display:inline-block;background:${GOLD_COLOR};color:#1a1a2e;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">
+        Shop Again
+      </a>
+    </div>
+
+    <p style="color:#888;font-size:12px;line-height:1.7;text-align:center;">
+      With gratitude,<br/>
+      <strong style="color:#1a1a2e;">The Saaj Tradition Team</strong>
+    </p>
+  `),
+};

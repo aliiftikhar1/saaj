@@ -436,3 +436,72 @@ export async function sendTestEmailsToAddress(
     return { sent, failed };
   });
 }
+
+// ─── CUSTOMER MANAGEMENT ─────────────────────────────────────────────────────
+
+export type OrderCustomer = {
+  email: string;
+  name: string;
+  orderCount: number;
+  lastOrderAt: Date;
+};
+
+/** Get distinct customers from orders (with email), sorted by most recent */
+export async function getOrderCustomers(): Promise<
+  ServerActionResponse<OrderCustomer[]>
+> {
+  return wrapServerCall(async () => {
+    const rows = await prisma.order.findMany({
+      where: { deliveryEmail: { not: null } },
+      select: {
+        deliveryEmail: true,
+        delieveryName: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Group by email
+    const map = new Map<string, OrderCustomer>();
+    for (const row of rows) {
+      const email = row.deliveryEmail!;
+      if (map.has(email)) {
+        map.get(email)!.orderCount += 1;
+      } else {
+        map.set(email, {
+          email,
+          name: row.delieveryName ?? "—",
+          orderCount: 1,
+          lastOrderAt: row.createdAt,
+        });
+      }
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => b.lastOrderAt.getTime() - a.lastOrderAt.getTime(),
+    );
+  });
+}
+
+/** Send a welcome email to a newsletter subscriber */
+export async function sendWelcomeEmailAction(
+  email: string,
+  name?: string,
+): Promise<ServerActionResponse<void>> {
+  return wrapServerCall(async () => {
+    const { sendWelcomeEmail } = await import("@/lib/email/email-service");
+    await sendWelcomeEmail({ to: email, name });
+  });
+}
+
+/** Send a thank-you email to a customer who ordered */
+export async function sendThankYouEmailAction(
+  email: string,
+  customerName: string,
+  orderNumber?: number | string,
+): Promise<ServerActionResponse<void>> {
+  return wrapServerCall(async () => {
+    const { sendThankYouEmail } = await import("@/lib/email/email-service");
+    await sendThankYouEmail({ to: email, customerName, orderNumber });
+  });
+}

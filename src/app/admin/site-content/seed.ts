@@ -1,7 +1,4 @@
-import { revalidateTag } from "next/cache";
-
 import { prisma } from "@/lib/prisma";
-import { CACHE_TAG_SITE_CONTENT } from "@/lib/constants/cache-tags";
 
 type SiteContentDefault = {
   key: string;
@@ -417,8 +414,6 @@ export async function seedSiteContentDefaults(): Promise<boolean> {
       data: missing,
       skipDuplicates: true,
     });
-    // Bust the unstable_cache so getAllSiteContent returns the new rows
-    revalidateTag(CACHE_TAG_SITE_CONTENT, "max");
   }
 
   // One-time migration: move video keys out of home-page into video-section
